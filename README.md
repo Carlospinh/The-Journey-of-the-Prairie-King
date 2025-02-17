@@ -1,151 +1,111 @@
-<img align="left" style="width:260px" src="https://github.com/raysan5/raylib/blob/master/logo/raylib_logo_animation.gif" width="288px">
+# Raylib-Quickstart
+A simple cross platform template for setting up a project with the bleeding edge raylib code.
+Works with C or C++.
 
-**raylib is a simple and easy-to-use library to enjoy videogames programming.**
+## Supported Platforms
+Quickstart supports the main 3 desktop platforms:
+* Windows
+* Linux
+* MacOS
 
-raylib is highly inspired by Borland BGI graphics lib and by XNA framework and it's especially well suited for prototyping, tooling, graphical applications, embedded systems and education.
+# Naming projects
+Do not name your game project 'raylib', it will conflict with the raylib library.
 
-*NOTE for ADVENTURERS: raylib is a programming library to enjoy videogames programming; no fancy interface, no visual helpers, no debug button... just coding in the most pure spartan-programmers way.*
+# VSCode Users (all platforms)
+*Note* You must have a compiler toolchain installed in addition to vscode.
 
-Ready to learn? Jump to [code examples!](https://www.raylib.com/examples.html)
+* Download the quickstart
+* Rename the folder to your game name
+* Open the folder in VSCode
+* Run the build task ( CTRL+SHIFT+B or F5 )
+* You are good to go
 
----
+# Windows Users
+There are two compiler toolchains available for windows, MinGW-W64 (a free compiler using GCC), and Microsoft Visual Studio
+## Using MinGW-W64
+* Double click the `build-MinGW-W64.bat` file
+* CD into the folder in your terminal
+* run `make`
+* You are good to go
 
-<br>
+### Note on MinGW-64 versions
+Make sure you have a modern version of MinGW-W64 (not mingw).
+The best place to get it is from the W64devkit from
+https://github.com/skeeto/w64devkit/releases
+or the version installed with the raylib installer
+#### If you have installed raylib from the installer
+Make sure you have added the path
 
-[![GitHub Releases Downloads](https://img.shields.io/github/downloads/raysan5/raylib/total)](https://github.com/raysan5/raylib/releases)
-[![GitHub Stars](https://img.shields.io/github/stars/raysan5/raylib?style=flat&label=stars)](https://github.com/raysan5/raylib/stargazers)
-[![GitHub commits since tagged version](https://img.shields.io/github/commits-since/raysan5/raylib/5.5)](https://github.com/raysan5/raylib/commits/master)
-[![GitHub Sponsors](https://img.shields.io/github/sponsors/raysan5?label=sponsors)](https://github.com/sponsors/raysan5)
-[![Packaging Status](https://repology.org/badge/tiny-repos/raylib.svg)](https://repology.org/project/raylib/versions)
-[![License](https://img.shields.io/badge/license-zlib%2Flibpng-blue.svg)](LICENSE)
+`C:\raylib\w64devkit\bin`
 
-[![Discord Members](https://img.shields.io/discord/426912293134270465.svg?label=Discord&logo=discord)](https://discord.gg/raylib)
-[![Reddit Static Badge](https://img.shields.io/badge/-r%2Fraylib-red?style=flat&logo=reddit&label=reddit)](https://www.reddit.com/r/raylib/)
-[![Youtube Subscribers](https://img.shields.io/youtube/channel/subscribers/UC8WIBkhYb5sBNqXO1mZ7WSQ?style=flat&label=Youtube&logo=youtube)](https://www.youtube.com/c/raylib)
-[![Twitch Status](https://img.shields.io/twitch/status/raysan5?style=flat&label=Twitch&logo=twitch)](https://www.twitch.tv/raysan5)
+To your path environment variable so that the compiler that came with raylib can be found.
 
-[![Windows](https://github.com/raysan5/raylib/workflows/Windows/badge.svg)](https://github.com/raysan5/raylib/actions?query=workflow%3AWindows)
-[![Linux](https://github.com/raysan5/raylib/workflows/Linux/badge.svg)](https://github.com/raysan5/raylib/actions?query=workflow%3ALinux)
-[![macOS](https://github.com/raysan5/raylib/workflows/macOS/badge.svg)](https://github.com/raysan5/raylib/actions?query=workflow%3AmacOS)
-[![WebAssembly](https://github.com/raysan5/raylib/workflows/WebAssembly/badge.svg)](https://github.com/raysan5/raylib/actions?query=workflow%3AWebAssembly)
+DO NOT INSTALL ANOTHER MinGW-W64 from another source such as msys2, you don't need it.
 
-[![CMakeBuilds](https://github.com/raysan5/raylib/workflows/CMakeBuilds/badge.svg)](https://github.com/raysan5/raylib/actions?query=workflow%3ACMakeBuilds)
-[![Windows Examples](https://github.com/raysan5/raylib/actions/workflows/windows_examples.yml/badge.svg)](https://github.com/raysan5/raylib/actions/workflows/windows_examples.yml)
-[![Linux Examples](https://github.com/raysan5/raylib/actions/workflows/linux_examples.yml/badge.svg)](https://github.com/raysan5/raylib/actions/workflows/linux_examples.yml)
+## Microsoft Visual Studio
+* Run `build-VisualStudio2022.bat`
+* double click the `.sln` file that is generated
+* develop your game
+* you are good to go
 
-features
---------
-  - **NO external dependencies**, all required libraries are [bundled into raylib](https://github.com/raysan5/raylib/tree/master/src/external)
-  - Multiple platforms supported: **Windows, Linux, MacOS, RPI, Android, HTML5... and more!**
-  - Written in plain C code (C99) using PascalCase/camelCase notation
-  - Hardware accelerated with OpenGL (**1.1, 2.1, 3.3, 4.3, ES 2.0, ES 3.0**)
-  - **Unique OpenGL abstraction layer** (usable as standalone module): [rlgl](https://github.com/raysan5/raylib/blob/master/src/rlgl.h)
-  - Multiple **Fonts** formats supported (TTF, OTF, FNT, BDF, sprite fonts)
-  - Multiple texture formats supported, including **compressed formats** (DXT, ETC, ASTC)
-  - **Full 3D support**, including 3D Shapes, Models, Billboards, Heightmaps and more! 
-  - Flexible Materials system, supporting classic maps and **PBR maps**
-  - **Animated 3D models** supported (skeletal bones animation) (IQM, M3D, glTF)
-  - Shaders support, including model shaders and **postprocessing** shaders
-  - **Powerful math module** for Vector, Matrix and Quaternion operations: [raymath](https://github.com/raysan5/raylib/blob/master/src/raymath.h)
-  - Audio loading and playing with streaming support (WAV, QOA, OGG, MP3, FLAC, XM, MOD)
-  - **VR stereo rendering** support with configurable HMD device parameters
-  - Huge examples collection with [+140 code examples](https://github.com/raysan5/raylib/tree/master/examples)!
-  - Bindings to [+70 programming languages](https://github.com/raysan5/raylib/blob/master/BINDINGS.md)!
-  - **Free and open source**
+# Linux Users
+* CD into the build folder
+* run `./premake5 gmake2`
+* CD back to the root
+* run `make`
+* you are good to go
 
-basic example
---------------
-This is a basic raylib example, it creates a window and draws the text `"Congrats! You created your first window!"` in the middle of the screen. Check this example [running live on web here](https://www.raylib.com/examples/core/loader.html?name=core_basic_window).
-```c
-#include "raylib.h"
+# MacOS Users
+* CD into the build folder
+* run `./premake5.osx gmake2`
+* CD back to the root
+* run `make`
+* you are good to go
 
-int main(void)
-{
-    InitWindow(800, 450, "raylib [core] example - basic window");
+# Output files
+The built code will be in the bin dir
 
-    while (!WindowShouldClose())
-    {
-        BeginDrawing();
-            ClearBackground(RAYWHITE);
-            DrawText("Congrats! You created your first window!", 190, 200, 20, LIGHTGRAY);
-        EndDrawing();
-    }
+# Working directories and the resources folder
+The example uses a utility function from `path_utils.h` that will find the resources dir and set it as the current working directory. This is very useful when starting out. If you wish to manage your own working directory you can simply remove the call to the function and the header.
 
-    CloseWindow();
+# Changing to C++
+Simply rename `src/main.c` to `src/main.cpp` and re-run the steps above and do a clean build.
 
-    return 0;
-}
-```
+# Using your own code
+Simply remove `src/main.c` and replace it with your code, and re-run the steps above and do a clean build.
 
-build and installation
-----------------------
+# Building for other OpenGL targets
+If you need to build for a different OpenGL version than the default (OpenGL 3.3) you can specify an OpenGL version in your premake command line. Just modify the bat file or add the following to your command line
 
-raylib binary releases for Windows, Linux, macOS, Android and HTML5 are available at the [Github Releases page](https://github.com/raysan5/raylib/releases).
+## For OpenGL 1.1
+`--graphics=opengl11`
 
-raylib is also available via multiple package managers on multiple OS distributions.
+## For OpenGL 2.1
+`--graphics=opengl21`
 
-#### Installing and building raylib on multiple platforms
+## For OpenGL 4.3
+`--graphics=opengl43`
 
-[raylib Wiki](https://github.com/raysan5/raylib/wiki#development-platforms) contains detailed instructions on building and usage on multiple platforms.
+## For OpenGLES 2.0
+`--graphics=opengles2`
 
- - [Working on Windows](https://github.com/raysan5/raylib/wiki/Working-on-Windows)
- - [Working on macOS](https://github.com/raysan5/raylib/wiki/Working-on-macOS)
- - [Working on GNU Linux](https://github.com/raysan5/raylib/wiki/Working-on-GNU-Linux)
- - [Working on Chrome OS](https://github.com/raysan5/raylib/wiki/Working-on-Chrome-OS)
- - [Working on FreeBSD](https://github.com/raysan5/raylib/wiki/Working-on-FreeBSD)
- - [Working on Raspberry Pi](https://github.com/raysan5/raylib/wiki/Working-on-Raspberry-Pi)
- - [Working for Android](https://github.com/raysan5/raylib/wiki/Working-for-Android)
- - [Working for Web (HTML5)](https://github.com/raysan5/raylib/wiki/Working-for-Web-(HTML5))
- - [Working anywhere with CMake](https://github.com/raysan5/raylib/wiki/Working-with-CMake)
+## For OpenGLES 3.0
+`--graphics=opengles3`
 
-*Note that the Wiki is open for edit, if you find some issues while building raylib for your target platform, feel free to edit the Wiki or open an issue related to it.*
+# License
+Copyright (c) 2020-2025 Jeffery Myers
 
-#### Setup raylib with multiple IDEs
+This software is provided "as-is", without any express or implied warranty. In no event 
+will the authors be held liable for any damages arising from the use of this software.
 
-raylib has been developed on Windows platform using [Notepad++](https://notepad-plus-plus.org/) and [MinGW GCC](https://www.mingw-w64.org/) compiler but it can be used with other IDEs on multiple platforms.
+Permission is granted to anyone to use this software for any purpose, including commercial 
+applications, and to alter it and redistribute it freely, subject to the following restrictions:
 
-[Projects directory](https://github.com/raysan5/raylib/tree/master/projects) contains several ready-to-use **project templates** to build raylib and code examples with multiple IDEs.
+  1. The origin of this software must not be misrepresented; you must not claim that you 
+  wrote the original software. If you use this software in a product, an acknowledgment 
+  in the product documentation would be appreciated but is not required.
 
-*Note that there are lots of IDEs supported, some of the provided templates could require some review, so please, if you find some issue with a template or you think they could be improved, feel free to send a PR or open a related issue.*
+  2. Altered source versions must be plainly marked as such, and must not be misrepresented
+  as being the original software.
 
-learning and docs
-------------------
-
-raylib is designed to be learned using [the examples](https://github.com/raysan5/raylib/tree/master/examples) as the main reference. There is no standard API documentation but there is a [**cheatsheet**](https://www.raylib.com/cheatsheet/cheatsheet.html) containing all the functions available on the library a short description of each one of them, input parameters and result value names should be intuitive enough to understand how each function works. 
-
-Some additional documentation about raylib design can be found in [raylib GitHub Wiki](https://github.com/raysan5/raylib/wiki). Here are the relevant links:
-
- - [raylib cheatsheet](https://www.raylib.com/cheatsheet/cheatsheet.html)
- - [raylib architecture](https://github.com/raysan5/raylib/wiki/raylib-architecture)
- - [raylib library design](https://github.com/raysan5/raylib/wiki)
- - [raylib examples collection](https://github.com/raysan5/raylib/tree/master/examples)
- - [raylib games collection](https://github.com/raysan5/raylib-games)
-
-
-contact and networks
----------------------
-
-raylib is present in several networks and raylib community is growing everyday. If you are using raylib and enjoying it, feel free to join us in any of these networks. The most active network is our [Discord server](https://discord.gg/raylib)! :)
-
- - Webpage: [https://www.raylib.com](https://www.raylib.com)
- - Discord: [https://discord.gg/raylib](https://discord.gg/raylib)
- - Twitter: [https://www.twitter.com/raysan5](https://www.twitter.com/raysan5)
- - BlueSky: [https://bsky.app/profile/raysan5](https://bsky.app/profile/raysan5.bsky.social)
- - Twitch:  [https://www.twitch.tv/raysan5](https://www.twitch.tv/raysan5)
- - Reddit:  [https://www.reddit.com/r/raylib](https://www.reddit.com/r/raylib)
- - Patreon: [https://www.patreon.com/raylib](https://www.patreon.com/raylib)
- - YouTube: [https://www.youtube.com/channel/raylib](https://www.youtube.com/c/raylib)
-
-contributors
-------------
-
-<a href="https://github.com/raysan5/raylib/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=raysan5/raylib&max=500&columns=20&anon=1" />
-</a>
-
-license
--------
-
-raylib is licensed under an unmodified zlib/libpng license, which is an OSI-certified, BSD-like license that allows static linking with closed source software. Check [LICENSE](LICENSE) for further details.
-
-raylib uses internally some libraries for window/graphics/inputs management and also to support different file formats loading, all those libraries are embedded with and are available in [src/external](https://github.com/raysan5/raylib/tree/master/src/external) directory. Check [raylib dependencies LICENSES](https://github.com/raysan5/raylib/wiki/raylib-dependencies) on [raylib Wiki](https://github.com/raysan5/raylib/wiki) for details.
+  3. This notice may not be removed or altered from any source distribution.
