@@ -20,7 +20,7 @@ Do not name your game project 'raylib', it will conflict with the raylib library
 * Run the build task ( CTRL+SHIFT+B or F5 )
 * You are good to go
 
-# Windows Users
+# Windows Users 
 There are two compiler toolchains available for windows, MinGW-W64 (a free compiler using GCC), and Microsoft Visual Studio
 ## Using MinGW-W64
 * Double click the `build-MinGW-W64.bat` file
