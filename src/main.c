@@ -11,6 +11,7 @@ typedef enum GameState {
 GameState currentGameState = MENU;
 
 Texture2D playerSprites[4];
+Texture2D levelBackground;
 Vector2 playerPosition = { SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 };
 int currentFrame = 1;  // Empieza con player2.png (posición quieta)
 float frameTime = 0.2f;  // Tiempo entre cambios de sprite
@@ -31,6 +32,9 @@ void InitGame() {
     playerSprites[1] = LoadTexture("resources/player2.png");
     playerSprites[2] = LoadTexture("resources/player3.png");
     playerSprites[3] = LoadTexture("resources/player4.png");
+
+    // Cargar el fondo del nivel 1
+    levelBackground = LoadTexture("levels/Level_1.png");
 }
 
 void UpdateGame() {
@@ -38,14 +42,14 @@ void UpdateGame() {
         if (IsKeyPressed(KEY_ENTER)) {
             currentGameState = PLAYING;
         }
-    } else if (currentGameState == PLAYING) {
+    }
+    else if (currentGameState == PLAYING) {
         bool moving = false;
 
-        // Dirección de movimiento
         if (IsKeyDown(KEY_A) || IsKeyDown(KEY_S)) {
             movingLeft = true;
             movingRight = false;
-        } 
+        }
         if (IsKeyDown(KEY_D) || IsKeyDown(KEY_W)) {
             movingRight = true;
             movingLeft = false;
@@ -70,16 +74,17 @@ void UpdateGame() {
 
         if (!moving) {
             currentFrame = 1;  // Si está quieto, usa player2.png
-        } else {
-            // Animación con mismo tiempo de espera para ambos cambios
+        }
+        else {
             frameCounter += GetFrameTime();
             if (frameCounter >= frameTime) {
                 frameCounter = 0.0f;
 
                 if (movingLeft) {
-                    currentFrame = (currentFrame == 0) ? 1 : 0;  // Alterna entre player1 y player2
-                } else if (movingRight) {
-                    currentFrame = (currentFrame == 2) ? 3 : 2;  // Alterna entre player3 y player4
+                    currentFrame = (currentFrame == 0) ? 1 : 0;
+                }
+                else if (movingRight) {
+                    currentFrame = (currentFrame == 2) ? 3 : 2;
                 }
             }
         }
@@ -94,7 +99,12 @@ void DrawGame() {
         DrawTexture(menuLogo, (SCREEN_WIDTH - menuLogo.width) / 2, (SCREEN_HEIGHT - menuLogo.height) / 3, WHITE);
         DrawRectangleRec(startButton, WHITE);
         DrawText("START", startButton.x + 60, startButton.y + 15, 20, BLACK);
-    } else if (currentGameState == PLAYING) {
+    }
+    else if (currentGameState == PLAYING) {
+        // Dibujar el fondo del nivel 1
+        DrawTexture(levelBackground, 0, 0, WHITE);
+
+        // Dibujar al jugador sobre el fondo
         DrawTexture(playerSprites[currentFrame], playerPosition.x, playerPosition.y, WHITE);
     }
 
@@ -106,6 +116,7 @@ void CloseGame() {
     for (int i = 0; i < 4; i++) {
         UnloadTexture(playerSprites[i]);
     }
+    UnloadTexture(levelBackground); // Liberar memoria del fondo
     CloseWindow();
 }
 
