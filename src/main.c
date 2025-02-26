@@ -11,7 +11,11 @@ typedef enum GameState {
 GameState currentGameState = MENU;
 
 Texture2D playerSprites[4];
-Texture2D levelBackground;
+Texture2D levelBackgrounds[2];
+int currentBackground = 0;
+float backgroundFrameTime = 0.5f;  // Tiempo entre cambios de fondo
+float backgroundFrameCounter = 0.0f;
+
 Vector2 playerPosition = { SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 };
 int currentFrame = 1;  // Empieza con player2.png (posición quieta)
 float frameTime = 0.2f;  // Tiempo entre cambios de sprite
@@ -33,8 +37,9 @@ void InitGame() {
     playerSprites[2] = LoadTexture("resources/player3.png");
     playerSprites[3] = LoadTexture("resources/player4.png");
 
-    // Cargar el fondo del nivel 1
-    levelBackground = LoadTexture("levels/Level_1.png");
+    // Cargar las texturas del fondo del nivel 1
+    levelBackgrounds[0] = LoadTexture("levels/Level_1.png");
+    levelBackgrounds[1] = LoadTexture("levels/Level_1_2.png");
 }
 
 void UpdateGame() {
@@ -88,6 +93,13 @@ void UpdateGame() {
                 }
             }
         }
+
+        // Alternar entre los fondos para dar efecto de animación
+        backgroundFrameCounter += GetFrameTime();
+        if (backgroundFrameCounter >= backgroundFrameTime) {
+            backgroundFrameCounter = 0.0f;
+            currentBackground = (currentBackground + 1) % 2;
+        }
     }
 }
 
@@ -101,15 +113,15 @@ void DrawGame() {
         DrawText("START", startButton.x + 60, startButton.y + 15, 20, BLACK);
     }
     else if (currentGameState == PLAYING) {
-        // Dibujar el fondo del nivel 1 escalado y centrado
-        float scale = 2.5f;
-        Rectangle sourceRec = { 0, 0, levelBackground.width, levelBackground.height };
-        Rectangle destRec = { (SCREEN_WIDTH - levelBackground.width * scale) / 2,
-                              (SCREEN_HEIGHT - levelBackground.height * scale) / 2,
-                              levelBackground.width * scale,
-                              levelBackground.height * scale };
+        // Dibujar el fondo del nivel 1 animado y centrado
+        float scale = 2.0f;
+        Rectangle sourceRec = { 0, 0, levelBackgrounds[currentBackground].width, levelBackgrounds[currentBackground].height };
+        Rectangle destRec = { (SCREEN_WIDTH - levelBackgrounds[currentBackground].width * scale) / 2,
+                              (SCREEN_HEIGHT - levelBackgrounds[currentBackground].height * scale) / 2,
+                              levelBackgrounds[currentBackground].width * scale,
+                              levelBackgrounds[currentBackground].height * scale };
         Vector2 origin = { 0, 0 };
-        DrawTexturePro(levelBackground, sourceRec, destRec, origin, 0.0f, WHITE);
+        DrawTexturePro(levelBackgrounds[currentBackground], sourceRec, destRec, origin, 0.0f, WHITE);
 
         // Dibujar al jugador sobre el fondo
         DrawTexture(playerSprites[currentFrame], playerPosition.x, playerPosition.y, WHITE);
@@ -123,7 +135,9 @@ void CloseGame() {
     for (int i = 0; i < 4; i++) {
         UnloadTexture(playerSprites[i]);
     }
-    UnloadTexture(levelBackground); // Liberar memoria del fondo
+    for (int i = 0; i < 2; i++) {
+        UnloadTexture(levelBackgrounds[i]); // Liberar memoria de los fondos
+    }
     CloseWindow();
 }
 
