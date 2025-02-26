@@ -60,19 +60,25 @@ void UpdateGame() {
             movingLeft = false;
         }
 
-        if (IsKeyDown(KEY_W)) {
+        float scale = 2.0f;
+        float bgWidth = levelBackgrounds[currentBackground].width * scale;
+        float bgHeight = levelBackgrounds[currentBackground].height * scale;
+        float bgX = (SCREEN_WIDTH - bgWidth) / 2;
+        float bgY = (SCREEN_HEIGHT - bgHeight) / 2;
+
+        if (IsKeyDown(KEY_W) && playerPosition.y > bgY) {
             playerPosition.y -= playerSpeed * GetFrameTime();
             moving = true;
         }
-        if (IsKeyDown(KEY_S)) {
+        if (IsKeyDown(KEY_S) && playerPosition.y + playerSprites[currentFrame].height < bgY + bgHeight) {
             playerPosition.y += playerSpeed * GetFrameTime();
             moving = true;
         }
-        if (IsKeyDown(KEY_A)) {
+        if (IsKeyDown(KEY_A) && playerPosition.x > bgX) {
             playerPosition.x -= playerSpeed * GetFrameTime();
             moving = true;
         }
-        if (IsKeyDown(KEY_D)) {
+        if (IsKeyDown(KEY_D) && playerPosition.x + playerSprites[currentFrame].width < bgX + bgWidth) {
             playerPosition.x += playerSpeed * GetFrameTime();
             moving = true;
         }
