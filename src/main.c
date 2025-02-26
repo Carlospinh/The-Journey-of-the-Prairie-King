@@ -101,8 +101,15 @@ void DrawGame() {
         DrawText("START", startButton.x + 60, startButton.y + 15, 20, BLACK);
     }
     else if (currentGameState == PLAYING) {
-        // Dibujar el fondo del nivel 1
-        DrawTexture(levelBackground, 0, 0, WHITE);
+        // Dibujar el fondo del nivel 1 escalado y centrado
+        float scale = 2.5f;
+        Rectangle sourceRec = { 0, 0, levelBackground.width, levelBackground.height };
+        Rectangle destRec = { (SCREEN_WIDTH - levelBackground.width * scale) / 2,
+                              (SCREEN_HEIGHT - levelBackground.height * scale) / 2,
+                              levelBackground.width * scale,
+                              levelBackground.height * scale };
+        Vector2 origin = { 0, 0 };
+        DrawTexturePro(levelBackground, sourceRec, destRec, origin, 0.0f, WHITE);
 
         // Dibujar al jugador sobre el fondo
         DrawTexture(playerSprites[currentFrame], playerPosition.x, playerPosition.y, WHITE);
