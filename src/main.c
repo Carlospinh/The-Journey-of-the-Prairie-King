@@ -25,6 +25,9 @@ float timeRemaining = 60.0f;  // Tiempo total en segundos para la barra (ejemplo
 float timeElapsed = 0.0f;     // Contador de tiempo transcurrido
 bool movingLeft = false;
 bool movingRight = false;
+float lastBulletTime = 0.0f;
+float bulletCooldown = 0.2f; // 1 segundo de delay entre disparos
+
 
 Texture2D menuLogo;
 Rectangle startButton = { SCREEN_WIDTH / 2 - 100, SCREEN_HEIGHT - 100, 200, 50 };
@@ -36,7 +39,7 @@ Vector2 bullets[MAX_BULLETS];
 Vector2 bulletDirections[MAX_BULLETS]; // Dirección de cada bala
 bool bulletActive[MAX_BULLETS]; // Para rastrear si una bala está activa
 int bulletCount = 0;
-float bulletSpeed = 400.0f;
+float bulletSpeed = 300.0f;
 
 void InitGame() {
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Journey of the Prairie King");
@@ -141,58 +144,47 @@ void UpdateGame() {
         }
 
         // Disparar balas con las flechas de dirección
-        if (IsKeyPressed(KEY_UP)) {
+        if (GetTime() - lastBulletTime >= bulletCooldown) {
             if (bulletCount < MAX_BULLETS) {
                 for (int i = 0; i < MAX_BULLETS; i++) {
                     if (!bulletActive[i]) {
-                        bullets[i] = (Vector2){ playerPosition.x + playerSprites[currentFrame].width / 2 - bulletTexture.width / 2, playerPosition.y };
-                        bulletDirections[i] = (Vector2){ 0, -1 }; // Disparar hacia arriba
-                        bulletActive[i] = true;
-                        bulletCount++;
-                        break;
+                        if (IsKeyPressed(KEY_UP)) {
+                            bullets[i] = (Vector2){ playerPosition.x + playerSprites[currentFrame].width / 2 - bulletTexture.width / 2, playerPosition.y };
+                            bulletDirections[i] = (Vector2){ 0, -1 }; // Disparo hacia arriba
+                            bulletActive[i] = true;
+                            bulletCount++;
+                            lastBulletTime = GetTime();
+                            break;
+                        }
+                        if (IsKeyPressed(KEY_DOWN)) {
+                            bullets[i] = (Vector2){ playerPosition.x + playerSprites[currentFrame].width / 2 - bulletTexture.width / 2, playerPosition.y };
+                            bulletDirections[i] = (Vector2){ 0, 1 }; // Disparo hacia abajo
+                            bulletActive[i] = true;
+                            bulletCount++;
+                            lastBulletTime = GetTime();
+                            break;
+                        }
+                        if (IsKeyPressed(KEY_LEFT)) {
+                            bullets[i] = (Vector2){ playerPosition.x + playerSprites[currentFrame].width / 2 - bulletTexture.width / 2, playerPosition.y };
+                            bulletDirections[i] = (Vector2){ -1, 0 }; // Disparo hacia la izquierda
+                            bulletActive[i] = true;
+                            bulletCount++;
+                            lastBulletTime = GetTime();
+                            break;
+                        }
+                        if (IsKeyPressed(KEY_RIGHT)) {
+                            bullets[i] = (Vector2){ playerPosition.x + playerSprites[currentFrame].width / 2 - bulletTexture.width / 2, playerPosition.y };
+                            bulletDirections[i] = (Vector2){ 1, 0 }; // Disparo hacia la derecha
+                            bulletActive[i] = true;
+                            bulletCount++;
+                            lastBulletTime = GetTime();
+                            break;
+                        }
                     }
                 }
             }
         }
-        if (IsKeyPressed(KEY_DOWN)) {
-            if (bulletCount < MAX_BULLETS) {
-                for (int i = 0; i < MAX_BULLETS; i++) {
-                    if (!bulletActive[i]) {
-                        bullets[i] = (Vector2){ playerPosition.x + playerSprites[currentFrame].width / 2 - bulletTexture.width / 2, playerPosition.y };
-                        bulletDirections[i] = (Vector2){ 0, 1 }; // Disparar hacia abajo
-                        bulletActive[i] = true;
-                        bulletCount++;
-                        break;
-                    }
-                }
-            }
-        }
-        if (IsKeyPressed(KEY_LEFT)) {
-            if (bulletCount < MAX_BULLETS) {
-                for (int i = 0; i < MAX_BULLETS; i++) {
-                    if (!bulletActive[i]) {
-                        bullets[i] = (Vector2){ playerPosition.x + playerSprites[currentFrame].width / 2 - bulletTexture.width / 2, playerPosition.y };
-                        bulletDirections[i] = (Vector2){ -1, 0 }; // Disparar hacia la izquierda
-                        bulletActive[i] = true;
-                        bulletCount++;
-                        break;
-                    }
-                }
-            }
-        }
-        if (IsKeyPressed(KEY_RIGHT)) {
-            if (bulletCount < MAX_BULLETS) {
-                for (int i = 0; i < MAX_BULLETS; i++) {
-                    if (!bulletActive[i]) {
-                        bullets[i] = (Vector2){ playerPosition.x + playerSprites[currentFrame].width / 2 - bulletTexture.width / 2, playerPosition.y };
-                        bulletDirections[i] = (Vector2){ 1, 0 }; // Disparar hacia la derecha
-                        bulletActive[i] = true;
-                        bulletCount++;
-                        break;
-                    }
-                }
-            }
-        }
+
 
         // Actualizar posición de las balas
         for (int i = 0; i < MAX_BULLETS; i++) {
@@ -251,7 +243,7 @@ void DrawGame() {
         // Dibujar las balas
         for (int i = 0; i < MAX_BULLETS; i++) {
             if (bulletActive[i]) {
-                DrawTexture(bulletTexture, bullets[i].x, bullets[i].y, WHITE);
+                DrawTextureEx(bulletTexture, bullets[i], 0.0f, 2.5f, WHITE);
             }
         }
     }
