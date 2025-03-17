@@ -21,6 +21,8 @@ int currentFrame = 1;  // Empieza con player2.png (posición quieta)
 float frameTime = 0.2f;  // Tiempo entre cambios de sprite
 float frameCounter = 0.0f;
 float playerSpeed = 200.0f;
+float timeRemaining = 60.0f;  // Tiempo total en segundos para la barra (ejemplo: 60 segundos)
+float timeElapsed = 0.0f;     // Contador de tiempo transcurrido
 bool movingLeft = false;
 bool movingRight = false;
 
@@ -60,6 +62,20 @@ void InitGame() {
 }
 
 void UpdateGame() {
+    // Actualizar el tiempo transcurrido
+    timeElapsed += GetFrameTime();  // Se suma el tiempo de cada frame
+
+    // Reducir el tiempo restante
+    if (timeRemaining > 0) {
+        timeRemaining -= GetFrameTime();
+    }
+
+    // Si el tiempo se acaba, puedes agregar alguna acción aquí (por ejemplo, reiniciar el juego o terminar el nivel)
+    if (timeRemaining <= 0) {
+        // Acción cuando el tiempo se agote (puedes reiniciar, terminar el juego, etc.)
+        timeRemaining = 0;  // Asegura que no pase de 0
+    }
+
     if (currentGameState == MENU) {
         if (IsKeyPressed(KEY_ENTER)) {
             currentGameState = PLAYING;
@@ -204,6 +220,21 @@ void DrawGame() {
         DrawText("START", startButton.x + 60, startButton.y + 15, 20, BLACK);
     }
     else if (currentGameState == PLAYING) {
+
+        // Barra de tiempo en la parte superior central
+        float progressBarWidth = 500.0f;  // Ancho de la barra más pequeño (ajustado)
+        float progressBarHeight = 10.0f;  // Altura de la barra más pequeña
+        float timeProgress = (timeRemaining / 60.0f) * progressBarWidth; // Calculamos el porcentaje de la barra
+
+        // Calcular la posición X para centrar la barra
+        float progressBarX = (SCREEN_WIDTH - progressBarWidth) / 2;
+
+        // Fondo de la barra (color gris oscuro)
+        DrawRectangle(progressBarX, 90, progressBarWidth, progressBarHeight, GRAY);
+
+        // Barra de progreso (color verde)
+        DrawRectangle(progressBarX, 90, timeProgress, progressBarHeight, GREEN);
+
         // Dibujar el fondo del nivel 1 animado y centrado
         float scale = 2.0f;
         Rectangle sourceRec = { 0, 0, levelBackgrounds[currentBackground].width, levelBackgrounds[currentBackground].height };
