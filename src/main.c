@@ -28,7 +28,6 @@ bool movingRight = false;
 float lastBulletTime = 0.0f;
 float bulletCooldown = 0.2f; // 1 segundo de delay entre disparos
 
-
 Texture2D menuLogo;
 Rectangle startButton = { SCREEN_WIDTH / 2 - 100, SCREEN_HEIGHT - 100, 200, 50 };
 
@@ -40,6 +39,9 @@ Vector2 bulletDirections[MAX_BULLETS]; // Dirección de cada bala
 bool bulletActive[MAX_BULLETS]; // Para rastrear si una bala está activa
 int bulletCount = 0;
 float bulletSpeed = 300.0f;
+
+// Definir los rectángulos de colisión de los obstáculos laterales
+Rectangle sideObstacles[8];
 
 void InitGame() {
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Journey of the Prairie King");
@@ -62,6 +64,11 @@ void InitGame() {
     for (int i = 0; i < MAX_BULLETS; i++) {
         bulletActive[i] = false;
     }
+
+    // Inicializar los obstáculos laterales
+    for (int i = 0; i < 8; i++) {
+        sideObstacles[i] = (Rectangle){ 100 + (i * 150), 200, 50, 100 }; // Cambiar estos valores para ajustar la posición
+    }
 }
 
 void UpdateGame() {
@@ -75,7 +82,6 @@ void UpdateGame() {
 
     // Si el tiempo se acaba, puedes agregar alguna acción aquí (por ejemplo, reiniciar el juego o terminar el nivel)
     if (timeRemaining <= 0) {
-        // Acción cuando el tiempo se agote (puedes reiniciar, terminar el juego, etc.)
         timeRemaining = 0;  // Asegura que no pase de 0
     }
 
@@ -143,48 +149,84 @@ void UpdateGame() {
             currentBackground = (currentBackground + 1) % 2;
         }
 
+        // Verificar colisión con los obstáculos laterales
+        for (int i = 0; i < 8; i++) {
+            if (CheckCollisionRecs((Rectangle) { playerPosition.x, playerPosition.y, playerSprites[currentFrame].width, playerSprites[currentFrame].height }, sideObstacles[i])) {
+                // Aquí aplicamos la corrección para evitar que el jugador atraviese los obstáculos
+                // Detenemos el jugador dependiendo de la dirección de la colisión
+
+                // Verificar colisión por la izquierda
+                if (playerPosition.x + playerSprites[currentFrame].width > sideObstacles[i].x &&
+                    playerPosition.x < sideObstacles[i].x) {
+                    playerPosition.x = sideObstacles[i].x - playerSprites[currentFrame].width; // Empujar hacia la izquierda
+                }
+
+                // Verificar colisión por la derecha
+                if (playerPosition.x < sideObstacles[i].x + sideObstacles[i].width &&
+                    playerPosition.x + playerSprites[currentFrame].width > sideObstacles[i].x + sideObstacles[i].width) {
+                    playerPosition.x = sideObstacles[i].x + sideObstacles[i].width; // Empujar hacia la derecha
+                }
+
+                // Verificar colisión por arriba
+                if (playerPosition.y + playerSprites[currentFrame].height > sideObstacles[i].y &&
+                    playerPosition.y < sideObstacles[i].y) {
+                    playerPosition.y = sideObstacles[i].y - playerSprites[currentFrame].height; // Empujar hacia arriba
+                }
+
+                // Verificar colisión por abajo
+                if (playerPosition.y < sideObstacles[i].y + sideObstacles[i].height &&
+                    playerPosition.y + playerSprites[currentFrame].height > sideObstacles[i].y + sideObstacles[i].height) {
+                    playerPosition.y = sideObstacles[i].y + sideObstacles[i].height; // Empujar hacia abajo
+                }
+
+                break;  // Detener la comprobación de colisiones adicionales para este obstáculo
+            }
+        }
+
         // Disparar balas con las flechas de dirección
         if (GetTime() - lastBulletTime >= bulletCooldown) {
             if (bulletCount < MAX_BULLETS) {
                 for (int i = 0; i < MAX_BULLETS; i++) {
                     if (!bulletActive[i]) {
+                        Vector2 bulletDir = { 0, 0 };
+                        bool shouldShoot = false;
+
                         if (IsKeyPressed(KEY_UP)) {
-                            bullets[i] = (Vector2){ playerPosition.x + playerSprites[currentFrame].width / 2 - bulletTexture.width / 2, playerPosition.y };
-                            bulletDirections[i] = (Vector2){ 0, -1 }; // Disparo hacia arriba
-                            bulletActive[i] = true;
-                            bulletCount++;
-                            lastBulletTime = GetTime();
-                            break;
+                            bulletDir = (Vector2){ 0, -1 };
+                            shouldShoot = true;
                         }
                         if (IsKeyPressed(KEY_DOWN)) {
-                            bullets[i] = (Vector2){ playerPosition.x + playerSprites[currentFrame].width / 2 - bulletTexture.width / 2, playerPosition.y };
-                            bulletDirections[i] = (Vector2){ 0, 1 }; // Disparo hacia abajo
-                            bulletActive[i] = true;
-                            bulletCount++;
-                            lastBulletTime = GetTime();
-                            break;
+                            bulletDir = (Vector2){ 0, 1 };
+                            shouldShoot = true;
                         }
                         if (IsKeyPressed(KEY_LEFT)) {
-                            bullets[i] = (Vector2){ playerPosition.x + playerSprites[currentFrame].width / 2 - bulletTexture.width / 2, playerPosition.y };
-                            bulletDirections[i] = (Vector2){ -1, 0 }; // Disparo hacia la izquierda
-                            bulletActive[i] = true;
-                            bulletCount++;
-                            lastBulletTime = GetTime();
-                            break;
+                            bulletDir = (Vector2){ -1, 0 };
+                            shouldShoot = true;
                         }
                         if (IsKeyPressed(KEY_RIGHT)) {
-                            bullets[i] = (Vector2){ playerPosition.x + playerSprites[currentFrame].width / 2 - bulletTexture.width / 2, playerPosition.y };
-                            bulletDirections[i] = (Vector2){ 1, 0 }; // Disparo hacia la derecha
+                            bulletDir = (Vector2){ 1, 0 };
+                            shouldShoot = true;
+                        }
+
+                        if (shouldShoot) {
+                            float playerCenterX = playerPosition.x + playerSprites[currentFrame].width / 2;
+                            float playerCenterY = playerPosition.y + playerSprites[currentFrame].height / 2;
+
+                            bullets[i] = (Vector2){
+                                playerCenterX - bulletTexture.width / 2 + bulletDir.x * 10,
+                                playerCenterY - bulletTexture.height / 2 + bulletDir.y * 10
+                            };
+
+                            bulletDirections[i] = bulletDir;
                             bulletActive[i] = true;
                             bulletCount++;
-                            lastBulletTime = GetTime();
+                            lastBulletTime = GetTime();  // Se actualiza solo después de disparar  
                             break;
                         }
                     }
                 }
             }
         }
-
 
         // Actualizar posición de las balas
         for (int i = 0; i < MAX_BULLETS; i++) {
@@ -212,22 +254,12 @@ void DrawGame() {
         DrawText("START", startButton.x + 60, startButton.y + 15, 20, BLACK);
     }
     else if (currentGameState == PLAYING) {
-
-        // Barra de tiempo en la parte superior central
+        // Barra de tiempo
         float progressBarWidth = 500.0f;  // Ancho de la barra más pequeño (ajustado)
         float progressBarHeight = 10.0f;  // Altura de la barra más pequeña
-        float timeProgress = (timeRemaining / 60.0f) * progressBarWidth; // Calculamos el porcentaje de la barra
+        float timeProgress = (timeRemaining / 60.0f) * progressBarWidth;
 
-        // Calcular la posición X para centrar la barra
-        float progressBarX = (SCREEN_WIDTH - progressBarWidth) / 2;
-
-        // Fondo de la barra (color gris oscuro)
-        DrawRectangle(progressBarX, 90, progressBarWidth, progressBarHeight, GRAY);
-
-        // Barra de progreso (color verde)
-        DrawRectangle(progressBarX, 90, timeProgress, progressBarHeight, GREEN);
-
-        // Dibujar el fondo del nivel 1 animado y centrado
+        // Dibujar el fondo
         float scale = 2.0f;
         Rectangle sourceRec = { 0, 0, levelBackgrounds[currentBackground].width, levelBackgrounds[currentBackground].height };
         Rectangle destRec = { (SCREEN_WIDTH - levelBackgrounds[currentBackground].width * scale) / 2,
@@ -237,7 +269,7 @@ void DrawGame() {
         Vector2 origin = { 0, 0 };
         DrawTexturePro(levelBackgrounds[currentBackground], sourceRec, destRec, origin, 0.0f, WHITE);
 
-        // Dibujar al jugador sobre el fondo
+        // Dibujar al jugador
         DrawTexture(playerSprites[currentFrame], playerPosition.x, playerPosition.y, WHITE);
 
         // Dibujar las balas
@@ -245,6 +277,11 @@ void DrawGame() {
             if (bulletActive[i]) {
                 DrawTextureEx(bulletTexture, bullets[i], 0.0f, 2.5f, WHITE);
             }
+        }
+
+        // Dibujar los rectángulos de colisión (solo para debug, puedes eliminarlos si no es necesario)
+        for (int i = 0; i < 8; i++) {
+            DrawRectangleLinesEx(sideObstacles[i], 2, DARKGRAY);  // Dibujar bordes de los rectángulos de colisión
         }
     }
 
