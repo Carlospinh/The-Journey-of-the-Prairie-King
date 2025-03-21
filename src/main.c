@@ -10,23 +10,23 @@ typedef enum GameState {
 
 GameState currentGameState = MENU;
 
-Texture2D playerSprites[4];
-Texture2D levelBackgrounds[2];
+Texture2D playerSprites[4];      // Sprites del jugador
+Texture2D levelBackgrounds[2];  // Fondos del nivel
 int currentBackground = 0;
 float backgroundFrameTime = 0.5f;  // Tiempo entre cambios de fondo
 float backgroundFrameCounter = 0.0f;
 
 Vector2 playerPosition = { SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 };
-int currentFrame = 1;  // Empieza con player2.png (posición quieta)
-float frameTime = 0.2f;  // Tiempo entre cambios de sprite
+int currentFrame = 1;            // Empieza con player2.png (posición quieta)
+float frameTime = 0.2f;          // Tiempo entre cambios de sprite
 float frameCounter = 0.0f;
 float playerSpeed = 200.0f;
-float timeRemaining = 60.0f;  // Tiempo total en segundos para la barra (ejemplo: 60 segundos)
-float timeElapsed = 0.0f;     // Contador de tiempo transcurrido
+float timeRemaining = 60.0f;     // Tiempo total en segundos para la barra (ejemplo: 60 segundos)
+float timeElapsed = 0.0f;       // Contador de tiempo transcurrido
 bool movingLeft = false;
 bool movingRight = false;
 float lastBulletTime = 0.0f;
-float bulletCooldown = 0.2f; // 1 segundo de delay entre disparos
+float bulletCooldown = 0.2f;     // 1 segundo de delay entre disparos
 
 Texture2D menuLogo;
 Rectangle startButton = { SCREEN_WIDTH / 2 - 100, SCREEN_HEIGHT - 100, 200, 50 };
@@ -35,8 +35,8 @@ Rectangle startButton = { SCREEN_WIDTH / 2 - 100, SCREEN_HEIGHT - 100, 200, 50 }
 #define MAX_BULLETS 100
 Texture2D bulletTexture;
 Vector2 bullets[MAX_BULLETS];
-Vector2 bulletDirections[MAX_BULLETS]; // Dirección de cada bala
-bool bulletActive[MAX_BULLETS]; // Para rastrear si una bala está activa
+Vector2 bulletDirections[MAX_BULLETS];  // Dirección de cada bala
+bool bulletActive[MAX_BULLETS];         // Para rastrear si una bala está activa
 int bulletCount = 0;
 float bulletSpeed = 300.0f;
 
@@ -94,14 +94,22 @@ void UpdateGame() {
     else if (currentGameState == PLAYING) {
         bool moving = false;
 
-        // Cálculo de la posición y tamaño del fondo
-        float scale = 3.8f; // Factor de escala del fondo
+        if (IsKeyDown(KEY_A) || IsKeyDown(KEY_S)) {
+            movingLeft = true;
+            movingRight = false;
+        }
+        if (IsKeyDown(KEY_D) || IsKeyDown(KEY_W)) {
+            movingRight = true;
+            movingLeft = false;
+        }
+
+        float scale = 3.8f;
         float bgWidth = levelBackgrounds[currentBackground].width * scale;
         float bgHeight = levelBackgrounds[currentBackground].height * scale;
-        float bgX = (SCREEN_WIDTH - bgWidth) / 2 - 100; // Centrado en el eje X
-        float bgY = (SCREEN_HEIGHT - bgHeight) / 2 - 10; // Centrado en el eje Y
 
-        // Movimiento del jugador con límites ajustados por el fondo
+        float bgX = (SCREEN_WIDTH - bgWidth) / 2 - 100; // Centrar horizontalmente
+        float bgY = (SCREEN_HEIGHT - bgHeight) / 2 - 10;// Centrar verticalmente
+
         if (IsKeyDown(KEY_W) && playerPosition.y > bgY) {
             playerPosition.y -= playerSpeed * GetFrameTime();
             moving = true;
@@ -176,7 +184,6 @@ void UpdateGame() {
                 break;  // Detener la comprobación de colisiones adicionales para este obstáculo
             }
         }
-
 
         // Disparar balas con las flechas de dirección
         if (GetTime() - lastBulletTime >= bulletCooldown) {
@@ -255,20 +262,18 @@ void DrawGame() {
         float timeProgress = (timeRemaining / 60.0f) * progressBarWidth;
 
         // Dibujar el fondo
-        // Dibujar el fondo
-        float scale = 3.8f; // Factor de escala del fondo
+// Dibujar el fondo
+        float scale = 3.8f;  // Mantener la escala para que el fondo sea más grande
         Rectangle sourceRec = { 0, 0, levelBackgrounds[currentBackground].width, levelBackgrounds[currentBackground].height };
-
-        // Calcula la posición para centrar el fondo
-        float bgWidth = levelBackgrounds[currentBackground].width * scale;
-        float bgHeight = levelBackgrounds[currentBackground].height * scale;
-        float bgX = (SCREEN_WIDTH - bgWidth) / 2 - 100; // Centrado en el eje X
-        float bgY = (SCREEN_HEIGHT - bgHeight) / 2 - 10; // Centrado en el eje Y
-
-        // Dibujar el fondo con la posición calculada
-        Rectangle destRec = { bgX, bgY, bgWidth, bgHeight };
+        Rectangle destRec = {
+            (SCREEN_WIDTH - levelBackgrounds[currentBackground].width * scale) / 2, // Centrar horizontalmente
+            (SCREEN_HEIGHT - levelBackgrounds[currentBackground].height * scale) / 2, // Centrar verticalmente
+            levelBackgrounds[currentBackground].width * scale,
+            levelBackgrounds[currentBackground].height * scale
+        };
         Vector2 origin = { 0, 0 };
         DrawTexturePro(levelBackgrounds[currentBackground], sourceRec, destRec, origin, 0.0f, WHITE);
+
 
         // Dibujar al jugador
         DrawTexture(playerSprites[currentFrame], playerPosition.x, playerPosition.y, WHITE);
