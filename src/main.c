@@ -1,7 +1,7 @@
 #include "raylib.h"
 
-#define SCREEN_WIDTH 1280
-#define SCREEN_HEIGHT 720
+#define SCREEN_WIDTH 1920
+#define SCREEN_HEIGHT 1080
 
 typedef enum GameState {
     MENU,
@@ -45,6 +45,7 @@ Rectangle sideObstacles[8];
 
 void InitGame() {
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Journey of the Prairie King");
+    ToggleFullscreen();  // Activa el modo pantalla completa
     SetTargetFPS(60);
 
     menuLogo = LoadTexture("resources/JOPK_logo.png");
@@ -93,21 +94,14 @@ void UpdateGame() {
     else if (currentGameState == PLAYING) {
         bool moving = false;
 
-        if (IsKeyDown(KEY_A) || IsKeyDown(KEY_S)) {
-            movingLeft = true;
-            movingRight = false;
-        }
-        if (IsKeyDown(KEY_D) || IsKeyDown(KEY_W)) {
-            movingRight = true;
-            movingLeft = false;
-        }
-
-        float scale = 2.0f;
+        // Cálculo de la posición y tamaño del fondo
+        float scale = 3.8f; // Factor de escala del fondo
         float bgWidth = levelBackgrounds[currentBackground].width * scale;
         float bgHeight = levelBackgrounds[currentBackground].height * scale;
-        float bgX = (SCREEN_WIDTH - bgWidth) / 2;
-        float bgY = (SCREEN_HEIGHT - bgHeight) / 2;
+        float bgX = (SCREEN_WIDTH - bgWidth) / 2 - 100; // Centrado en el eje X
+        float bgY = (SCREEN_HEIGHT - bgHeight) / 2 - 10; // Centrado en el eje Y
 
+        // Movimiento del jugador con límites ajustados por el fondo
         if (IsKeyDown(KEY_W) && playerPosition.y > bgY) {
             playerPosition.y -= playerSpeed * GetFrameTime();
             moving = true;
@@ -182,6 +176,7 @@ void UpdateGame() {
                 break;  // Detener la comprobación de colisiones adicionales para este obstáculo
             }
         }
+
 
         // Disparar balas con las flechas de dirección
         if (GetTime() - lastBulletTime >= bulletCooldown) {
@@ -260,12 +255,18 @@ void DrawGame() {
         float timeProgress = (timeRemaining / 60.0f) * progressBarWidth;
 
         // Dibujar el fondo
-        float scale = 2.0f;
+        // Dibujar el fondo
+        float scale = 3.8f; // Factor de escala del fondo
         Rectangle sourceRec = { 0, 0, levelBackgrounds[currentBackground].width, levelBackgrounds[currentBackground].height };
-        Rectangle destRec = { (SCREEN_WIDTH - levelBackgrounds[currentBackground].width * scale) / 2,
-                              (SCREEN_HEIGHT - levelBackgrounds[currentBackground].height * scale) / 2,
-                              levelBackgrounds[currentBackground].width * scale,
-                              levelBackgrounds[currentBackground].height * scale };
+
+        // Calcula la posición para centrar el fondo
+        float bgWidth = levelBackgrounds[currentBackground].width * scale;
+        float bgHeight = levelBackgrounds[currentBackground].height * scale;
+        float bgX = (SCREEN_WIDTH - bgWidth) / 2 - 100; // Centrado en el eje X
+        float bgY = (SCREEN_HEIGHT - bgHeight) / 2 - 10; // Centrado en el eje Y
+
+        // Dibujar el fondo con la posición calculada
+        Rectangle destRec = { bgX, bgY, bgWidth, bgHeight };
         Vector2 origin = { 0, 0 };
         DrawTexturePro(levelBackgrounds[currentBackground], sourceRec, destRec, origin, 0.0f, WHITE);
 
