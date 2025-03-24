@@ -16,7 +16,7 @@ int currentBackground = 0;
 float backgroundFrameTime = 0.5f;  // Tiempo entre cambios de fondo
 float backgroundFrameCounter = 0.0f;
 
-Vector2 playerPosition = { SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 };
+Vector2 playerPosition = { SCREEN_WIDTH / 2 - 100, SCREEN_HEIGHT / 2 };
 int currentFrame = 1;            // Empieza con player2.png (posición quieta)
 float frameTime = 0.2f;          // Tiempo entre cambios de sprite
 float frameCounter = 0.0f;
@@ -29,7 +29,7 @@ float lastBulletTime = 0.0f;
 float bulletCooldown = 0.2f;     // 1 segundo de delay entre disparos
 
 Texture2D menuLogo;
-Rectangle startButton = { SCREEN_WIDTH / 2 - 100, SCREEN_HEIGHT - 100, 200, 50 };
+Rectangle startButton = { SCREEN_WIDTH / 2 - 200, SCREEN_HEIGHT - 100, 200, 50 };
 
 // Variables para las balas
 #define MAX_BULLETS 100
@@ -107,8 +107,8 @@ void UpdateGame() {
         float bgWidth = levelBackgrounds[currentBackground].width * scale;
         float bgHeight = levelBackgrounds[currentBackground].height * scale;
 
-        float bgX = (SCREEN_WIDTH - bgWidth) / 2 - 100; // Centrar horizontalmente
-        float bgY = (SCREEN_HEIGHT - bgHeight) / 2 - 10;// Centrar verticalmente
+        float bgX = (SCREEN_WIDTH - bgWidth) / 2 - 100;// Centrar horizontalmente
+        float bgY = (SCREEN_HEIGHT - bgHeight) / 2;// Centrar verticalmente
 
         if (IsKeyDown(KEY_W) && playerPosition.y > bgY) {
             playerPosition.y -= playerSpeed * GetFrameTime();
@@ -251,7 +251,7 @@ void DrawGame() {
     ClearBackground(BLACK);
 
     if (currentGameState == MENU) {
-        DrawTexture(menuLogo, (SCREEN_WIDTH - menuLogo.width) / 2, (SCREEN_HEIGHT - menuLogo.height) / 3, WHITE);
+        DrawTexture(menuLogo, (SCREEN_WIDTH - menuLogo.width) / 2 - 100, (SCREEN_HEIGHT - menuLogo.height) / 3, WHITE);
         DrawRectangleRec(startButton, WHITE);
         DrawText("START", startButton.x + 60, startButton.y + 15, 20, BLACK);
     }
@@ -266,7 +266,7 @@ void DrawGame() {
         float scale = 3.8f;  // Mantener la escala para que el fondo sea más grande
         Rectangle sourceRec = { 0, 0, levelBackgrounds[currentBackground].width, levelBackgrounds[currentBackground].height };
         Rectangle destRec = {
-            (SCREEN_WIDTH - levelBackgrounds[currentBackground].width * scale) / 2, // Centrar horizontalmente
+            (SCREEN_WIDTH - levelBackgrounds[currentBackground].width * scale) / 2 - 100, 
             (SCREEN_HEIGHT - levelBackgrounds[currentBackground].height * scale) / 2, // Centrar verticalmente
             levelBackgrounds[currentBackground].width * scale,
             levelBackgrounds[currentBackground].height * scale
