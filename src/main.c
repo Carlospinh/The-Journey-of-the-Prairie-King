@@ -66,10 +66,29 @@ void InitGame() {
         bulletActive[i] = false;
     }
 
-    // Inicializar los obstáculos laterales
-    for (int i = 0; i < 8; i++) {
-        sideObstacles[i] = (Rectangle){ 100 + (i * 150), 200, 50, 100 }; // Cambiar estos valores para ajustar la posición
-    }
+    float bgX = (SCREEN_WIDTH - 860) / 2 - 100;
+    float bgY = (SCREEN_HEIGHT - 860) / 2;
+    float bgWidth = 860;
+    float bgHeight = 860;
+    float thickness = 50;
+    float gapWidth = 50; // Espacio entre los rectángulos superiores
+
+    // Laterales y esquinas
+    sideObstacles[1] = (Rectangle){ bgX - thickness, bgY + bgHeight, bgWidth + 2 * thickness, thickness }; // Abajo
+    sideObstacles[2] = (Rectangle){ bgX - thickness, bgY, thickness, bgHeight }; // Izquierda
+    sideObstacles[3] = (Rectangle){ bgX + bgWidth, bgY, thickness, bgHeight }; // Derecha
+    sideObstacles[4] = (Rectangle){ bgX - thickness, bgY - thickness, thickness, thickness }; // Esquina superior izquierda
+    sideObstacles[5] = (Rectangle){ bgX + bgWidth, bgY - thickness, thickness, thickness }; // Esquina superior derecha
+    sideObstacles[6] = (Rectangle){ bgX - thickness, bgY + bgHeight, thickness, thickness }; // Esquina inferior izquierda
+    sideObstacles[7] = (Rectangle){ bgX + bgWidth, bgY + bgHeight, thickness, thickness }; // Esquina inferior derecha
+
+    // División superior en dos rectángulos dejando un espacio
+    float halfWidth = (bgWidth + 2 * thickness - gapWidth) / 2;
+
+    sideObstacles[0] = (Rectangle){ bgX - thickness, bgY - thickness, halfWidth, thickness }; // Superior izquierda
+    sideObstacles[8] = (Rectangle){ bgX - thickness + halfWidth + gapWidth, bgY - thickness, halfWidth, thickness }; // Superior derecha
+
+
 }
 
 void UpdateGame() {
@@ -276,12 +295,12 @@ void DrawGame() {
 
 
         // Dibujar al jugador
-        DrawTexture(playerSprites[currentFrame], playerPosition.x, playerPosition.y, WHITE);
+        DrawTextureEx(playerSprites[currentFrame], playerPosition, 0.0f, 1.5f, WHITE);
 
         // Dibujar las balas
         for (int i = 0; i < MAX_BULLETS; i++) {
             if (bulletActive[i]) {
-                DrawTextureEx(bulletTexture, bullets[i], 0.0f, 2.5f, WHITE);
+                DrawTextureEx(bulletTexture, bullets[i], 0.0f, 3.0f, WHITE);
             }
         }
 
