@@ -18,22 +18,9 @@ typedef enum ShootingDirection {
 
 GameState currentGameState = MENU;
 
-// Texturas originales para caminar
-Texture2D playerSprites[4];      // Sprites del jugador (player1.png, player2.png, etc.)
-
-// Nuevas texturas para disparar
-Texture2D moveLeftShootDown;
-Texture2D moveLeftShootLeft;
-Texture2D moveLeftShootRight;
-Texture2D moveLeftShootUp;
-Texture2D moveRightShootDown;
-Texture2D moveRightShootLeft;
-Texture2D moveRightShootRight;
-Texture2D moveRightShootUp;
-Texture2D stayShootDown;
-Texture2D stayShootLeft;
-Texture2D stayShootRight;
-Texture2D stayShootUp;
+// Texturas del jugador
+Texture2D playerSprites[4];      // Sprites básicos (player1.png, player2.png, etc.)
+Texture2D shootSprites[12];      // Todas las texturas de disparo en un array
 
 Texture2D levelBackgrounds[2];
 int currentBackground = 0;
@@ -53,7 +40,7 @@ float lastBulletTime = 0.0f;
 float bulletCooldown = 0.2f;
 ShootingDirection currentShootDirection = NONE;
 float shootAnimationTimer = 0.0f;
-float shootAnimationDuration = 0.3f; // Duración de la animación de disparo
+float shootAnimationDuration = 0.3f;
 
 Texture2D menuLogo;
 Rectangle startButton = { SCREEN_WIDTH / 2 - 200, SCREEN_HEIGHT - 100, 200, 50 };
@@ -67,6 +54,8 @@ int bulletCount = 0;
 float bulletSpeed = 300.0f;
 
 Rectangle sideObstacles[9];
+float playerScale = 2.5f; // Factor de escala para el jugador
+float bulletScale = 3.5f; // Factor de escala para las balas
 
 void InitGame() {
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Journey of the Prairie King");
@@ -76,24 +65,40 @@ void InitGame() {
     menuLogo = LoadTexture("resources/JOPK_logo.png");
 
     // Cargar las texturas originales de caminar
-    playerSprites[0] = LoadTexture("resources/player1.png");
-    playerSprites[1] = LoadTexture("resources/player2.png");
-    playerSprites[2] = LoadTexture("resources/player3.png");
-    playerSprites[3] = LoadTexture("resources/player4.png");
+    playerSprites[0] = LoadTexture("resources/player/player1.png");
+    playerSprites[1] = LoadTexture("resources/player/player2.png");
+    playerSprites[2] = LoadTexture("resources/player/player3.png");
+    playerSprites[3] = LoadTexture("resources/player/player4.png");
 
-    // Cargar las nuevas texturas de disparo
-    moveLeftShootDown = LoadTexture("resources/player/move_left_shoot_down.png");
-    moveLeftShootLeft = LoadTexture("resources/player/move_left_shoot_left.png");
-    moveLeftShootRight = LoadTexture("resources/player/move_left_shoot_right.png");
-    moveLeftShootUp = LoadTexture("resources/player/move_left_shoot_up.png");
-    moveRightShootDown = LoadTexture("resources/player/move_right_shoot_down.png");
-    moveRightShootLeft = LoadTexture("resources/player/move_right_shoot_left.png");
-    moveRightShootRight = LoadTexture("resources/player/move_right_shoot_right.png");
-    moveRightShootUp = LoadTexture("resources/player/move_right_shoot_up.png");
-    stayShootDown = LoadTexture("resources/player/stay_shoot_down.png");
-    stayShootLeft = LoadTexture("resources/player/stay_shoot_left.png");
-    stayShootRight = LoadTexture("resources/player/stay_shoot_right.png");
-    stayShootUp = LoadTexture("resources/player/stay_shoot_up.png");
+    // Cargar todas las texturas de disparo en un array ordenado
+    shootSprites[0] = LoadTexture("resources/player/move_left_shoot_down.png");
+    shootSprites[1] = LoadTexture("resources/player/move_left_shoot_left.png");
+    shootSprites[2] = LoadTexture("resources/player/move_left_shoot_right.png");
+    shootSprites[3] = LoadTexture("resources/player/move_left_shoot_up.png");
+    shootSprites[4] = LoadTexture("resources/player/move_right_shoot_down.png");
+    shootSprites[5] = LoadTexture("resources/player/move_right_shoot_left.png");
+    shootSprites[6] = LoadTexture("resources/player/move_right_shoot_right.png");
+    shootSprites[7] = LoadTexture("resources/player/move_right_shoot_up.png");
+    shootSprites[8] = LoadTexture("resources/player/stay_shoot_down.png");
+    shootSprites[9] = LoadTexture("resources/player/stay_shoot_left.png");
+    shootSprites[10] = LoadTexture("resources/player/stay_shoot_right.png");
+    shootSprites[11] = LoadTexture("resources/player/stay_shoot_up.png");
+
+    // Verificar que todas las texturas tienen el mismo tamaño
+    int baseWidth = playerSprites[5].width;
+    int baseHeight = playerSprites[5].height;
+
+    for (int i = 1; i < 4; i++) {
+        if (playerSprites[i].width != baseWidth || playerSprites[i].height != baseHeight) {
+            TraceLog(LOG_WARNING, "Las texturas básicas del jugador no tienen el mismo tamaño");
+        }
+    }
+
+    for (int i = 0; i < 12; i++) {
+        if (shootSprites[i].width != baseWidth || shootSprites[i].height != baseHeight) {
+            TraceLog(LOG_WARNING, "Las texturas de disparo no coinciden en tamaño con las básicas");
+        }
+    }
 
     levelBackgrounds[0] = LoadTexture("levels/Level_1.png");
     levelBackgrounds[1] = LoadTexture("levels/Level_1_2.png");
@@ -126,34 +131,34 @@ void InitGame() {
 }
 
 Texture2D GetCurrentPlayerTexture() {
-    // Si hay animación de disparo activa, usar las nuevas texturas
+    // Si hay animación de disparo activa, usar las texturas de disparo
     if (shootAnimationTimer > 0) {
         if (movingLeft) {
             switch (currentShootDirection) {
-            case UP: return moveLeftShootUp;
-            case DOWN: return moveLeftShootDown;
-            case LEFT: return moveLeftShootLeft;
-            case RIGHT: return moveLeftShootRight;
-            default: return playerSprites[currentFrame]; // Por defecto, usar animación de caminar
+            case UP: return shootSprites[3];    // move_left_shoot_up
+            case DOWN: return shootSprites[0];  // move_left_shoot_down
+            case LEFT: return shootSprites[1];  // move_left_shoot_left
+            case RIGHT: return shootSprites[2]; // move_left_shoot_right
+            default: return playerSprites[currentFrame];
             }
         }
         else if (movingRight) {
             switch (currentShootDirection) {
-            case UP: return moveRightShootUp;
-            case DOWN: return moveRightShootDown;
-            case LEFT: return moveRightShootLeft;
-            case RIGHT: return moveRightShootRight;
-            default: return playerSprites[currentFrame]; // Por defecto, usar animación de caminar
+            case UP: return shootSprites[7];    // move_right_shoot_up
+            case DOWN: return shootSprites[4];  // move_right_shoot_down
+            case LEFT: return shootSprites[5];  // move_right_shoot_left
+            case RIGHT: return shootSprites[6]; // move_right_shoot_right
+            default: return playerSprites[currentFrame];
             }
         }
         else {
             // Cuando está quieto y disparando
             switch (currentShootDirection) {
-            case UP: return stayShootUp;
-            case DOWN: return stayShootDown;
-            case LEFT: return stayShootLeft;
-            case RIGHT: return stayShootRight;
-            default: return playerSprites[currentFrame]; // Por defecto, usar animación de caminar
+            case UP: return shootSprites[11];   // stay_shoot_up
+            case DOWN: return shootSprites[8];  // stay_shoot_down
+            case LEFT: return shootSprites[9];  // stay_shoot_left
+            case RIGHT: return shootSprites[10]; // stay_shoot_right
+            default: return playerSprites[currentFrame];
             }
         }
     }
@@ -205,11 +210,15 @@ void UpdateGame() {
         float bgX = (SCREEN_WIDTH - bgWidth) / 2 - 100;
         float bgY = (SCREEN_HEIGHT - bgHeight) / 2;
 
+        Texture2D currentTex = GetCurrentPlayerTexture();
+        float playerWidth = currentTex.width * playerScale;
+        float playerHeight = currentTex.height * playerScale;
+
         if (IsKeyDown(KEY_W) && playerPosition.y > bgY) {
             playerPosition.y -= playerSpeed * GetFrameTime();
             moving = true;
         }
-        if (IsKeyDown(KEY_S) && playerPosition.y + GetCurrentPlayerTexture().height * 2.5f < bgY + bgHeight) {
+        if (IsKeyDown(KEY_S) && playerPosition.y + playerHeight < bgY + bgHeight) {
             playerPosition.y += playerSpeed * GetFrameTime();
             moving = true;
         }
@@ -217,7 +226,7 @@ void UpdateGame() {
             playerPosition.x -= playerSpeed * GetFrameTime();
             moving = true;
         }
-        if (IsKeyDown(KEY_D) && playerPosition.x + GetCurrentPlayerTexture().width * 2.5f < bgX + bgWidth) {
+        if (IsKeyDown(KEY_D) && playerPosition.x + playerWidth < bgX + bgWidth) {
             playerPosition.x += playerSpeed * GetFrameTime();
             moving = true;
         }
@@ -248,10 +257,6 @@ void UpdateGame() {
         }
 
         // Verificar colisión con los obstáculos
-        Texture2D currentPlayerTex = GetCurrentPlayerTexture();
-        float playerWidth = currentPlayerTex.width * 2.5f;
-        float playerHeight = currentPlayerTex.height * 2.5f;
-
         for (int i = 0; i < 9; i++) {
             if (CheckCollisionRecs((Rectangle) { playerPosition.x, playerPosition.y, playerWidth, playerHeight }, sideObstacles[i])) {
                 if (playerPosition.x + playerWidth > sideObstacles[i].x &&
@@ -308,12 +313,12 @@ void UpdateGame() {
                         }
 
                         if (shouldShoot) {
-                            float playerCenterX = playerPosition.x + GetCurrentPlayerTexture().width * 2.5f / 2;
-                            float playerCenterY = playerPosition.y + GetCurrentPlayerTexture().height * 2.5f / 2;
+                            float playerCenterX = playerPosition.x + playerWidth / 2;
+                            float playerCenterY = playerPosition.y + playerHeight / 2;
 
                             bullets[i] = (Vector2){
-                                playerCenterX - bulletTexture.width * 3.0f / 2 + bulletDir.x * 20,
-                                playerCenterY - bulletTexture.height * 3.0f / 2 + bulletDir.y * 20
+                                playerCenterX - bulletTexture.width * bulletScale / 2 + bulletDir.x * 20,
+                                playerCenterY - bulletTexture.height * bulletScale / 2 + bulletDir.y * 20
                             };
 
                             bulletDirections[i] = bulletDir;
@@ -369,12 +374,12 @@ void DrawGame() {
         DrawTexturePro(levelBackgrounds[currentBackground], sourceRec, destRec, origin, 0.0f, WHITE);
 
         // Dibujar al jugador
-        DrawTextureEx(GetCurrentPlayerTexture(), playerPosition, 0.0f, 2.5f, WHITE);
+        DrawTextureEx(GetCurrentPlayerTexture(), playerPosition, 0.0f, playerScale, WHITE);
 
         // Dibujar las balas
         for (int i = 0; i < MAX_BULLETS; i++) {
             if (bulletActive[i]) {
-                DrawTextureEx(bulletTexture, bullets[i], 0.0f, 3.5f, WHITE);
+                DrawTextureEx(bulletTexture, bullets[i], 0.0f, bulletScale, WHITE);
             }
         }
 
@@ -396,18 +401,9 @@ void CloseGame() {
     }
 
     // Liberar texturas de disparo
-    UnloadTexture(moveLeftShootDown);
-    UnloadTexture(moveLeftShootLeft);
-    UnloadTexture(moveLeftShootRight);
-    UnloadTexture(moveLeftShootUp);
-    UnloadTexture(moveRightShootDown);
-    UnloadTexture(moveRightShootLeft);
-    UnloadTexture(moveRightShootRight);
-    UnloadTexture(moveRightShootUp);
-    UnloadTexture(stayShootDown);
-    UnloadTexture(stayShootLeft);
-    UnloadTexture(stayShootRight);
-    UnloadTexture(stayShootUp);
+    for (int i = 0; i < 12; i++) {
+        UnloadTexture(shootSprites[i]);
+    }
 
     for (int i = 0; i < 2; i++) {
         UnloadTexture(levelBackgrounds[i]);
