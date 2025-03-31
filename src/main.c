@@ -54,7 +54,7 @@ int bulletCount = 0;
 float bulletSpeed = 300.0f;
 
 Rectangle sideObstacles[9];
-float playerScale = 2.5f; // Factor de escala para el jugador
+float playerScale = 3.0f; // Factor de escala para el jugador
 float bulletScale = 3.5f; // Factor de escala para las balas
 
 void InitGame() {
@@ -85,8 +85,8 @@ void InitGame() {
     shootSprites[11] = LoadTexture("resources/player/stay_shoot_up.png");
 
     // Verificar que todas las texturas tienen el mismo tamaño
-    int baseWidth = playerSprites[5].width;
-    int baseHeight = playerSprites[5].height;
+    int baseWidth = playerSprites[0].width;
+    int baseHeight = playerSprites[0].height;
 
     for (int i = 1; i < 4; i++) {
         if (playerSprites[i].width != baseWidth || playerSprites[i].height != baseHeight) {
@@ -338,7 +338,16 @@ void UpdateGame() {
                 bullets[i].x += bulletDirections[i].x * bulletSpeed * GetFrameTime();
                 bullets[i].y += bulletDirections[i].y * bulletSpeed * GetFrameTime();
 
-                if (bullets[i].x < 0 || bullets[i].x > SCREEN_WIDTH || bullets[i].y < 0 || bullets[i].y > SCREEN_HEIGHT) {
+                // Obtener las dimensiones del background
+                float scale = 3.8f;
+                float bgWidth = levelBackgrounds[currentBackground].width * scale;
+                float bgHeight = levelBackgrounds[currentBackground].height * scale;
+                float bgX = (SCREEN_WIDTH - bgWidth) / 2 - 100;
+                float bgY = (SCREEN_HEIGHT - bgHeight) / 2;
+
+                // Verificar si la bala está fuera del área del background
+                if (bullets[i].x < bgX || bullets[i].x > bgX + bgWidth ||
+                    bullets[i].y < bgY || bullets[i].y > bgY + bgHeight) {
                     bulletActive[i] = false;
                     bulletCount--;
                 }
