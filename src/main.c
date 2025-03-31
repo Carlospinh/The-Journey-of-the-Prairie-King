@@ -1,4 +1,6 @@
 #include "raylib.h"
+#include <stdlib.h> // Para rand() y srand()
+#include <time.h>   // Para time()
 
 #define SCREEN_WIDTH 1920
 #define SCREEN_HEIGHT 1080
@@ -57,10 +59,29 @@ Rectangle sideObstacles[9];
 float playerScale = 3.0f; // Factor de escala para el jugador
 float bulletScale = 3.5f; // Factor de escala para las balas
 
+// Estructura para los enemigos
+#define MAX_ENEMIES 20
+typedef struct {
+    Vector2 position;
+    Vector2 direction;
+    float speed;
+    bool active;
+    int currentFrame;
+    float frameTimer;
+    Texture2D frames[2]; // Dos frames para la animación
+    float scale;
+} Enemy;
+
+Enemy enemies[MAX_ENEMIES];
+float enemySpawnTimer = 0.0f;
+float enemySpawnInterval = 2.0f; // Cada 2 segundos
+Texture2D orcFrames[2]; // Texturas para los orcos
+
 void InitGame() {
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Journey of the Prairie King");
     ToggleFullscreen();
     SetTargetFPS(60);
+    srand(time(NULL)); // Inicializar semilla para números aleatorios
 
     menuLogo = LoadTexture("resources/JOPK_logo.png");
 
@@ -84,21 +105,9 @@ void InitGame() {
     shootSprites[10] = LoadTexture("resources/player/stay_shoot_right.png");
     shootSprites[11] = LoadTexture("resources/player/stay_shoot_up.png");
 
-    // Verificar que todas las texturas tienen el mismo tamaño
-    int baseWidth = playerSprites[0].width;
-    int baseHeight = playerSprites[0].height;
-
-    for (int i = 1; i < 4; i++) {
-        if (playerSprites[i].width != baseWidth || playerSprites[i].height != baseHeight) {
-            TraceLog(LOG_WARNING, "Las texturas básicas del jugador no tienen el mismo tamaño");
-        }
-    }
-
-    for (int i = 0; i < 12; i++) {
-        if (shootSprites[i].width != baseWidth || shootSprites[i].height != baseHeight) {
-            TraceLog(LOG_WARNING, "Las texturas de disparo no coinciden en tamaño con las básicas");
-        }
-    }
+    // Cargar texturas de los orcos
+    orcFrames[0] = LoadTexture("resources/Enemies/Orc/Orc1.png");
+    orcFrames[1] = LoadTexture("resources/Enemies/Orc/Orc2.png");
 
     levelBackgrounds[0] = LoadTexture("levels/Level_1.png");
     levelBackgrounds[1] = LoadTexture("levels/Level_1_2.png");
@@ -107,6 +116,15 @@ void InitGame() {
 
     for (int i = 0; i < MAX_BULLETS; i++) {
         bulletActive[i] = false;
+    }
+
+    // Inicializar enemigos
+    for (int i = 0; i < MAX_ENEMIES; i++) {
+        enemies[i].active = false;
+        enemies[i].frames[0] = orcFrames[0];
+        enemies[i].frames[1] = orcFrames[1];
+        enemies[i].scale = 3.0f;
+        enemies[i].speed = 100.0f + (rand() % 50); // Velocidad aleatoria entre 100 y 150
     }
 
     float bgX = (SCREEN_WIDTH - 860) / 2 - 100;
@@ -128,6 +146,56 @@ void InitGame() {
 
     sideObstacles[0] = (Rectangle){ bgX - thickness, bgY - thickness, halfWidth, thickness };
     sideObstacles[8] = (Rectangle){ bgX - thickness + halfWidth + gapWidth, bgY - thickness, halfWidth, thickness };
+}
+
+void SpawnEnemy() {
+    for (int i = 0; i < MAX_ENEMIES; i++) {
+        if (!enemies[i].active) {
+            // Determinar en qué borde aparecerá el enemigo (0: arriba, 1: derecha, 2: abajo, 3: izquierda)
+            int edge = rand() % 4;
+
+            // Posición inicial según el borde seleccionado
+            switch (edge) {
+            case 0: // Arriba
+                enemies[i].position.x = rand() % SCREEN_WIDTH;
+                enemies[i].position.y = 0;
+                break;
+            case 1: // Derecha
+                enemies[i].position.x = SCREEN_WIDTH;
+                enemies[i].position.y = rand() % SCREEN_HEIGHT;
+                break;
+            case 2: // Abajo
+                enemies[i].position.x = rand() % SCREEN_WIDTH;
+                enemies[i].position.y = SCREEN_HEIGHT;
+                break;
+            case 3: // Izquierda
+                enemies[i].position.x = 0;
+                enemies[i].position.y = rand() % SCREEN_HEIGHT;
+                break;
+            }
+
+            // Calcular dirección hacia el jugador
+            Vector2 direction = {
+                playerPosition.x - enemies[i].position.x,
+                playerPosition.y - enemies[i].position.y
+            };
+
+            // Normalizar la dirección
+            float length = sqrt(direction.x * direction.x + direction.y * direction.y);
+            if (length > 0) {
+                direction.x /= length;
+                direction.y /= length;
+            }
+
+            enemies[i].direction = direction;
+            enemies[i].active = true;
+            enemies[i].currentFrame = 0;
+            enemies[i].frameTimer = 0.0f;
+            enemies[i].speed = 100.0f + (rand() % 50); // Velocidad aleatoria entre 100 y 150
+
+            break;
+        }
+    }
 }
 
 Texture2D GetCurrentPlayerTexture() {
@@ -167,6 +235,35 @@ Texture2D GetCurrentPlayerTexture() {
     return playerSprites[currentFrame];
 }
 
+void UpdateEnemies() {
+    enemySpawnTimer += GetFrameTime();
+    if (enemySpawnTimer >= enemySpawnInterval) {
+        enemySpawnTimer = 0.0f;
+        SpawnEnemy();
+    }
+
+    for (int i = 0; i < MAX_ENEMIES; i++) {
+        if (enemies[i].active) {
+            // Actualizar posición
+            enemies[i].position.x += enemies[i].direction.x * enemies[i].speed * GetFrameTime();
+            enemies[i].position.y += enemies[i].direction.y * enemies[i].speed * GetFrameTime();
+
+            // Actualizar animación
+            enemies[i].frameTimer += GetFrameTime();
+            if (enemies[i].frameTimer >= 0.2f) { // Cambiar frame cada 0.2 segundos
+                enemies[i].frameTimer = 0.0f;
+                enemies[i].currentFrame = (enemies[i].currentFrame + 1) % 2;
+            }
+
+            // Verificar si el enemigo está fuera de la pantalla
+            if (enemies[i].position.x < -100 || enemies[i].position.x > SCREEN_WIDTH + 100 ||
+                enemies[i].position.y < -100 || enemies[i].position.y > SCREEN_HEIGHT + 100) {
+                enemies[i].active = false;
+            }
+        }
+    }
+}
+
 void UpdateGame() {
     timeElapsed += GetFrameTime();
 
@@ -192,6 +289,8 @@ void UpdateGame() {
         }
     }
     else if (currentGameState == PLAYING) {
+        UpdateEnemies(); // Actualizar enemigos
+
         bool moving = false;
 
         if (IsKeyDown(KEY_A) || IsKeyDown(KEY_S)) {
@@ -385,6 +484,14 @@ void DrawGame() {
         // Dibujar al jugador
         DrawTextureEx(GetCurrentPlayerTexture(), playerPosition, 0.0f, playerScale, WHITE);
 
+        // Dibujar enemigos
+        for (int i = 0; i < MAX_ENEMIES; i++) {
+            if (enemies[i].active) {
+                Texture2D currentFrame = enemies[i].frames[enemies[i].currentFrame];
+                DrawTextureEx(currentFrame, enemies[i].position, 0.0f, enemies[i].scale, WHITE);
+            }
+        }
+
         // Dibujar las balas
         for (int i = 0; i < MAX_BULLETS; i++) {
             if (bulletActive[i]) {
@@ -412,6 +519,11 @@ void CloseGame() {
     // Liberar texturas de disparo
     for (int i = 0; i < 12; i++) {
         UnloadTexture(shootSprites[i]);
+    }
+
+    // Liberar texturas de enemigos
+    for (int i = 0; i < 2; i++) {
+        UnloadTexture(orcFrames[i]);
     }
 
     for (int i = 0; i < 2; i++) {
