@@ -1,6 +1,7 @@
 #include "raylib.h"
 #include <stdlib.h> // Para rand() y srand()
 #include <time.h>   // Para time()
+#include <math.h>   // Para sqrt()
 
 #define SCREEN_WIDTH 1920
 #define SCREEN_HEIGHT 1080
@@ -149,30 +150,17 @@ void InitGame() {
 }
 
 void SpawnEnemy() {
+    float scale = 3.8f;
+    float bgWidth = levelBackgrounds[currentBackground].width * scale;
+    float bgHeight = levelBackgrounds[currentBackground].height * scale;
+    float bgX = (SCREEN_WIDTH - bgWidth) / 2 - 100;
+    float bgY = (SCREEN_HEIGHT - bgHeight) / 2;
+
     for (int i = 0; i < MAX_ENEMIES; i++) {
         if (!enemies[i].active) {
-            // Determinar en qué borde aparecerá el enemigo (0: arriba, 1: derecha, 2: abajo, 3: izquierda)
-            int edge = rand() % 4;
-
-            // Posición inicial según el borde seleccionado
-            switch (edge) {
-            case 0: // Arriba
-                enemies[i].position.x = rand() % SCREEN_WIDTH;
-                enemies[i].position.y = 0;
-                break;
-            case 1: // Derecha
-                enemies[i].position.x = SCREEN_WIDTH;
-                enemies[i].position.y = rand() % SCREEN_HEIGHT;
-                break;
-            case 2: // Abajo
-                enemies[i].position.x = rand() % SCREEN_WIDTH;
-                enemies[i].position.y = SCREEN_HEIGHT;
-                break;
-            case 3: // Izquierda
-                enemies[i].position.x = 0;
-                enemies[i].position.y = rand() % SCREEN_HEIGHT;
-                break;
-            }
+            // Generar posición aleatoria dentro del área del background
+            enemies[i].position.x = bgX + (float)(rand() % (int)bgWidth);
+            enemies[i].position.y = bgY + (float)(rand() % (int)bgHeight);
 
             // Calcular dirección hacia el jugador
             Vector2 direction = {
@@ -242,6 +230,12 @@ void UpdateEnemies() {
         SpawnEnemy();
     }
 
+    float scale = 3.8f;
+    float bgWidth = levelBackgrounds[currentBackground].width * scale;
+    float bgHeight = levelBackgrounds[currentBackground].height * scale;
+    float bgX = (SCREEN_WIDTH - bgWidth) / 2 - 100;
+    float bgY = (SCREEN_HEIGHT - bgHeight) / 2;
+
     for (int i = 0; i < MAX_ENEMIES; i++) {
         if (enemies[i].active) {
             // Actualizar posición
@@ -255,9 +249,9 @@ void UpdateEnemies() {
                 enemies[i].currentFrame = (enemies[i].currentFrame + 1) % 2;
             }
 
-            // Verificar si el enemigo está fuera de la pantalla
-            if (enemies[i].position.x < -100 || enemies[i].position.x > SCREEN_WIDTH + 100 ||
-                enemies[i].position.y < -100 || enemies[i].position.y > SCREEN_HEIGHT + 100) {
+            // Verificar si el enemigo está fuera del área del background
+            if (enemies[i].position.x < bgX - 100 || enemies[i].position.x > bgX + bgWidth + 100 ||
+                enemies[i].position.y < bgY - 100 || enemies[i].position.y > bgY + bgHeight + 100) {
                 enemies[i].active = false;
             }
         }
@@ -436,13 +430,6 @@ void UpdateGame() {
             if (bulletActive[i]) {
                 bullets[i].x += bulletDirections[i].x * bulletSpeed * GetFrameTime();
                 bullets[i].y += bulletDirections[i].y * bulletSpeed * GetFrameTime();
-
-                // Obtener las dimensiones del background
-                float scale = 3.8f;
-                float bgWidth = levelBackgrounds[currentBackground].width * scale;
-                float bgHeight = levelBackgrounds[currentBackground].height * scale;
-                float bgX = (SCREEN_WIDTH - bgWidth) / 2 - 100;
-                float bgY = (SCREEN_HEIGHT - bgHeight) / 2;
 
                 // Verificar si la bala está fuera del área del background
                 if (bullets[i].x < bgX || bullets[i].x > bgX + bgWidth ||
