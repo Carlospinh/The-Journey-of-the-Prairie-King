@@ -135,13 +135,15 @@ void InitGame() {
     float thickness = 50;
     float gapWidth = 50;
 
-    sideObstacles[1] = (Rectangle){ bgX - thickness, bgY + bgHeight, bgWidth + 2 * thickness, thickness };
-    sideObstacles[2] = (Rectangle){ bgX - thickness, bgY, thickness, bgHeight };
-    sideObstacles[3] = (Rectangle){ bgX + bgWidth, bgY, thickness, bgHeight };
-    sideObstacles[4] = (Rectangle){ bgX - thickness, bgY - thickness, thickness, thickness };
-    sideObstacles[5] = (Rectangle){ bgX + bgWidth, bgY - thickness, thickness, thickness };
-    sideObstacles[6] = (Rectangle){ bgX - thickness, bgY + bgHeight, thickness, thickness };
-    sideObstacles[7] = (Rectangle){ bgX + bgWidth, bgY + bgHeight, thickness, thickness };
+    sideObstacles[1] = (Rectangle){ bgX - thickness, bgY + bgHeight, 320 + 2 * thickness, thickness };//abajo primero
+    sideObstacles[2] = (Rectangle){ bgX - thickness, bgY, thickness, 370 };//izq
+    sideObstacles[3] = (Rectangle){ bgX + bgWidth, bgY, thickness, 370 };//der
+    sideObstacles[4] = (Rectangle){ bgX - thickness, bgY - thickness, thickness, thickness };//arriba esquina izq
+    sideObstacles[5] = (Rectangle){ bgX + bgWidth, bgY - thickness, thickness, thickness };//arriba esquina derecha
+    sideObstacles[6] = (Rectangle){ bgX - thickness, bgY + bgHeight, thickness, thickness };//abajo esquina izq
+    sideObstacles[7] = (Rectangle){ bgX + bgWidth, bgY + bgHeight, thickness, thickness };//abajo esquina derecha
+    sideObstacles[8] = (Rectangle){ bgX - thickness, bgY + bgHeight, bgHeight + 2 * thickness, thickness };//abajo segundo
+
 
     float halfWidth = (bgWidth + 2 * thickness - gapWidth) / 2;
 
