@@ -259,7 +259,7 @@ void UpdateEnemies() {
         }
     }
 }
-
+ 
 void UpdateGame() {
     timeElapsed += GetFrameTime();
 
