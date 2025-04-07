@@ -1,5 +1,5 @@
 #include "Menu.h"
-#include "../Constants.h"
+#include "Constants.h"
 
 Menu::Menu() : buttonPressed(false) {
     logo = { 0 };

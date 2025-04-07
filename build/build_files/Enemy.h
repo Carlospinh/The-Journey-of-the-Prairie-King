@@ -19,6 +19,9 @@ private:
     Vector2 direction;
     Player* target;
     Color color;
+    float health;
+    float maxHealth;
+
 
 public:
     Enemy(Vector2 pos, EnemyType enemyType, Player* target);

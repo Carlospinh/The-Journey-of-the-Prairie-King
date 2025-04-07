@@ -1,5 +1,5 @@
 #include "Background.h"
-#include "../Constants.h"
+#include "Constants.h"
 
 Background::Background() : currentTexture(0), frameTime(0.5f), frameCounter(0.0f), scale(3.8f) {
     textures[0] = { 0 };
