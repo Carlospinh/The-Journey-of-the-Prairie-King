@@ -6,7 +6,7 @@ Texture2D Enemy::fastTexture = { 0 };
 Texture2D Enemy::tankTexture = { 0 };
 
 Enemy::Enemy(Vector2 pos, EnemyType enemyType, Player* target) :
-    Entity(pos, 0, 0), type(enemyType), damage(10.0f),
+    Entity(pos, 0.0f, 0.0f), type(enemyType), damage(10.0f),
     attackCooldown(2.0f), currentCooldown(0.0f),
     direction({ 0,0 }), target(target), color(WHITE) {
 
@@ -30,8 +30,10 @@ Enemy::Enemy(Vector2 pos, EnemyType enemyType, Player* target) :
         color = GREEN;
         break;
     }
-
     initialHealth = health;
+}
+
+Enemy::~Enemy() {
 }
 
 void Enemy::Update(float deltaTime) {
@@ -39,20 +41,16 @@ void Enemy::Update(float deltaTime) {
 
     UpdateDirection();
 
-    // Movimiento
     position.x += direction.x * speed * deltaTime;
     position.y += direction.y * speed * deltaTime;
 
-    // Actualizar caja de colisión
     collisionBox.x = position.x;
     collisionBox.y = position.y;
 
-    // Enfriamiento de ataque
     if (currentCooldown > 0) {
         currentCooldown -= deltaTime;
     }
 
-    // Atacar si está en rango
     if (CheckCollision(target->GetCollisionBox()) && currentCooldown <= 0) {
         Attack();
     }
@@ -61,10 +59,8 @@ void Enemy::Update(float deltaTime) {
 void Enemy::Draw() const {
     if (!active) return;
 
-    // Dibujar enemigo
     DrawTextureV(texture, position, color);
 
-    // Barra de vida
     float healthPercentage = health / initialHealth;
     DrawRectangle(position.x, position.y - 10,
         texture.width * healthPercentage, 5, RED);

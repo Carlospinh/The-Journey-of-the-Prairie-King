@@ -3,7 +3,7 @@
 
 Menu::Menu() : buttonPressed(false) {
     logo = { 0 };
-    startButton = { Constants::SCREEN_WIDTH / 2 - 200, Constants::SCREEN_HEIGHT - 100, 200, 50 };
+    startButton = { Constants::SCREEN_WIDTH / 2.0f - 200, Constants::SCREEN_HEIGHT - 100, 200, 50 };
 }
 
 Menu::~Menu() {

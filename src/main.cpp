@@ -1,105 +1,144 @@
 #include "raylib.h"
-#include "Player.h"
-#include "Bullet.h"
-#include "Background.h"
-#include "ObstacleManager.h"
-#include "Menu.h"
+#include "Player/Player.h"
+#include "Bullet/Bullet.h"
+#include "Enemy/Enemy.h"
+#include "Enemy/EnemyManager.h"
+#include "Environment/Background.h"
+#include "Environment/ObstacleManager.h"
+#include "UI/Menu.h"
 #include "GameState.h"
 #include "Constants.h"
+#include <vector>
 
-class GameManager {
-private:
-    GameState currentGameState;
-    Player* player;
-    Bullet* bullets[MAX_BULLETS];
-    Background background;
-    ObstacleManager obstacleManager;
-    Menu menu;
-    float timeRemaining;
-    float timeElapsed;
-
-public:
-    GameManager();
-    ~GameManager();
-
-    void Init();
-    void Update();
-    void Draw();
-    void Close();
-};
-
-GameManager::GameManager() : currentGameState(GameState::MENU),
-player(nullptr), timeRemaining(60.0f), timeElapsed(0.0f) {
-    for (int i = 0; i < MAX_BULLETS; i++) {
-        bullets[i] = nullptr;
-    }
-}
-
-void GameManager::Init() {
+int main() {
     InitWindow(Constants::SCREEN_WIDTH, Constants::SCREEN_HEIGHT, "Journey of the Prairie King");
     ToggleFullscreen();
     SetTargetFPS(60);
 
-    menu.LoadResources();
+    Enemy::LoadTextures();
 
+    Player player({ Constants::SCREEN_WIDTH / 2.0f - 100, Constants::SCREEN_HEIGHT / 2.0f }, Constants::PLAYER_SPEED);
+    EnemyManager enemyManager(&player);
+
+    Background background;
     background.LoadTextures("levels/Level_1.png", "levels/Level_1_2.png");
+
+    ObstacleManager obstacleManager;
     obstacleManager.InitializeObstacles(background.GetBounds());
 
-    player = new Player({ Constants::SCREEN_WIDTH / 2 - 100, Constants::SCREEN_HEIGHT / 2 }, 200.0f);
-}
+    Menu menu;
+    menu.LoadResources();
 
-void GameManager::Update() {
-    if (currentGameState == GameState::MENU) {
-        menu.Update();
-        if (menu.ShouldStartGame()) {
-            currentGameState = GameState::PLAYING;
-        }
-    }
-    else {
-        // Actualización del juego...
-        background.Update(GetFrameTime());
-        player->Update(GetFrameTime());
-
-        // Verificar colisiones con obstáculos
-        if (obstacleManager.CheckCollision(player->GetCollisionBox())) {
-            // Manejar colisión...
-        }
-    }
-}
-
-void GameManager::Draw() {
-    BeginDrawing();
-    ClearBackground(BLACK);
-
-    if (currentGameState == GameState::MENU) {
-        menu.Draw();
-    }
-    else {
-        background.Draw();
-        player->Draw();
-        obstacleManager.DrawDebug(); // Solo para debug
+    std::vector<Bullet*> bullets;
+    for (int i = 0; i < Constants::MAX_BULLETS; i++) {
+        bullets.push_back(nullptr);
     }
 
-    EndDrawing();
-}
-
-void GameManager::Close() {
-    delete player;
-    for (int i = 0; i < MAX_BULLETS; i++) {
-        delete bullets[i];
-    }
-    CloseWindow();
-}
-
-int main() {
-    GameManager game;
-    game.Init();
+    GameState currentGameState = GameState::MENU;
+    float timeRemaining = 60.0f;
 
     while (!WindowShouldClose()) {
-        game.Update();
-        game.Draw();
+        float deltaTime = GetFrameTime();
+
+        if (currentGameState == GameState::MENU) {
+            menu.Update();
+            if (menu.ShouldStartGame()) {
+                currentGameState = GameState::PLAYING;
+            }
+        }
+        else {
+            timeRemaining -= deltaTime;
+            if (timeRemaining <= 0) timeRemaining = 0;
+
+            background.Update(deltaTime);
+            player.HandleInput(deltaTime);
+            player.Update(deltaTime);
+            enemyManager.Update(deltaTime);
+
+            if (player.CanShoot()) {
+                Vector2 bulletDir = { 0, 0 };
+                bool shouldShoot = false;
+
+                if (IsKeyPressed(KEY_UP)) {
+                    bulletDir = { 0, -1 };
+                    shouldShoot = true;
+                }
+                else if (IsKeyPressed(KEY_DOWN)) {
+                    bulletDir = { 0, 1 };
+                    shouldShoot = true;
+                }
+                else if (IsKeyPressed(KEY_LEFT)) {
+                    bulletDir = { -1, 0 };
+                    shouldShoot = true;
+                }
+                else if (IsKeyPressed(KEY_RIGHT)) {
+                    bulletDir = { 1, 0 };
+                    shouldShoot = true;
+                }
+
+                if (shouldShoot) {
+                    for (int i = 0; i < Constants::MAX_BULLETS; i++) {
+                        if (bullets[i] == nullptr || !bullets[i]->IsActive()) {
+                            Vector2 playerCenter = {
+                                player.GetPosition().x + player.GetCurrentTexture().width / 2,
+                                player.GetPosition().y + player.GetCurrentTexture().height / 2
+                            };
+
+                            if (bullets[i] == nullptr) {
+                                bullets[i] = new Bullet(playerCenter, bulletDir, Constants::BULLET_SPEED);
+                            }
+                            else {
+                                bullets[i]->SetPosition(playerCenter);
+                                bullets[i]->SetActive(true);
+                            }
+
+                            player.ResetShootTimer();
+                            break;
+                        }
+                    }
+                }
+            }
+
+            for (auto& bullet : bullets) {
+                if (bullet && bullet->IsActive()) {
+                    bullet->Update(deltaTime);
+                }
+            }
+
+            enemyManager.CheckCollisionsWithBullets(bullets);
+        }
+
+        BeginDrawing();
+        ClearBackground(BLACK);
+
+        if (currentGameState == GameState::MENU) {
+            menu.Draw();
+        }
+        else {
+            background.Draw();
+            obstacleManager.DrawDebug();
+            enemyManager.Draw();
+
+            for (auto& bullet : bullets) {
+                if (bullet && bullet->IsActive()) {
+                    bullet->Draw();
+                }
+            }
+
+            player.Draw();
+
+            DrawText(TextFormat("Time: %.1f", timeRemaining), 20, 20, 30, WHITE);
+            DrawText(TextFormat("Enemies: %d", (int)enemyManager.GetEnemyCount()), 20, 60, 30, WHITE);
+        }
+
+        EndDrawing();
     }
 
-    game.Close();
+    for (auto& bullet : bullets) {
+        delete bullet;
+    }
+
+    Enemy::UnloadTextures();
+    CloseWindow();
     return 0;
 }

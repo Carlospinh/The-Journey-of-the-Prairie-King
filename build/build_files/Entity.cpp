@@ -7,7 +7,6 @@ Entity::Entity(Vector2 pos, float spd, float hp) :
 }
 
 Entity::~Entity() {
-    // La textura debe ser manejada por las clases derivadas
 }
 
 void Entity::Draw() const {

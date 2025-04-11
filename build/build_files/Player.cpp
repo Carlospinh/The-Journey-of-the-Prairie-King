@@ -1,12 +1,18 @@
 #include "Player.h"
+#include "Constants.h"
 
-Player::Player(Vector2 pos, float spd) : Entity(pos, spd),
-currentFrame(1), frameTime(0.2f), frameCounter(0.0f),
-movingLeft(false), movingRight(false),
-lastBulletTime(0.0f), bulletCooldown(0.2f) {
+Player::Player(Vector2 pos, float spd) :
+    Entity(pos, spd, 100.0f),
+    currentFrame(1), frameTime(0.2f), frameCounter(0.0f),
+    movingLeft(false), movingRight(false),
+    lastBulletTime(0.0f), bulletCooldown(0.2f) {
 
-    // Inicializar sprites (deberían cargarse externamente)
-    collisionBox = { position.x, position.y, sprites[currentFrame].width * 1.5f, sprites[currentFrame].height * 1.5f };
+    sprites[0] = LoadTexture("resources/player1.png");
+    sprites[1] = LoadTexture("resources/player2.png");
+    sprites[2] = LoadTexture("resources/player3.png");
+    sprites[3] = LoadTexture("resources/player4.png");
+
+    SetTexture(sprites[currentFrame]);
 }
 
 Player::~Player() {
@@ -19,7 +25,6 @@ void Player::Update(float deltaTime) {
     frameCounter += deltaTime;
     if (frameCounter >= frameTime) {
         frameCounter = 0.0f;
-
         if (movingLeft) {
             currentFrame = (currentFrame == 0) ? 1 : 0;
         }
@@ -27,7 +32,6 @@ void Player::Update(float deltaTime) {
             currentFrame = (currentFrame == 2) ? 3 : 2;
         }
     }
-
     collisionBox.x = position.x;
     collisionBox.y = position.y;
 }

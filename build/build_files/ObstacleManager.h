@@ -12,7 +12,7 @@ public:
     ObstacleManager();
     void InitializeObstacles(const Rectangle& backgroundBounds);
     bool CheckCollision(const Rectangle& rect) const;
-    void DrawDebug() const; // Para visualización de obstáculos
+    void DrawDebug() const;
 };
 
 #endif

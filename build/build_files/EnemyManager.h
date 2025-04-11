@@ -4,6 +4,8 @@
 #include "Enemy.h"
 #include <vector>
 
+class Bullet;
+
 class EnemyManager {
 private:
     std::vector<Enemy*> enemies;
@@ -23,10 +25,10 @@ public:
 
     void SpawnEnemy();
     void SpawnWave(int waveSize);
-    void CheckCollisionsWithBullets(std::vector<Bullet*>& bullets);
+    void CheckCollisionsWithBullets(const std::vector<Bullet*>& bullets);
 
     const std::vector<Enemy*>& GetEnemies() const;
-    int GetEnemyCount() const;
+    size_t GetEnemyCount() const;
 };
 
 #endif
