@@ -11,19 +11,6 @@
 #include "SoundManager.h"
 #include "ResourceManager.h"
 
-#define SCREEN_WIDTH 1920
-#define SCREEN_HEIGHT 1080
-
-enum GameState {
-    INTRO_1,
-    INTRO_2, 
-    INTRO_3,
-    MENU,
-    PLAYING,
-    GAME_OVER,
-    LEVEL_COMPLETED
-};
-
 class Game {
 public:
     void Init();
