@@ -1,111 +1,58 @@
-# Raylib-Quickstart
-A simple cross platform template for setting up a project with the bleeding edge raylib code.
-Works with C or C++.
+# 🌾 Journey of the Prairie King
 
-## Supported Platforms
-Quickstart supports the main 3 desktop platforms:
-* Windows
-* Linux
-* MacOS
+**Journey of the Prairie King** es un **minijuego arcade** inspirado en *Stardew Valley*, donde encarnas a un **valiente pistolero del Viejo Oeste** enfrentando oleadas de enemigos en niveles llenos de acción, con power-ups, monedas, y mejoras. Su estética retro en pixel art y su jugabilidad trepidante lo hacen una experiencia divertida y desafiante.
 
-# Naming projects
-Do not name your game project 'raylib', it will conflict with the raylib library.
+🎮 ¡Prepárate para sobrevivir en el Lejano Oeste digital!
 
-# VSCode Users (all platforms)
-*Note* You must have a compiler toolchain installed in addition to vscode.
+---
 
-* Download the quickstart
-* Rename the folder to your game name
-* Open the folder in VSCode
-* Run the build task ( CTRL+SHIFT+B or F5 )
-* You are good to go
+## 📹 Demostración en Video
 
-# Windows Users 
-There are two compiler toolchains available for windows, MinGW-W64 (a free compiler using GCC), and Microsoft Visual Studio
-## Using MinGW-W64
-* Double click the `build-MinGW-W64.bat` file
-* CD into the folder in your terminal
-* run `make`
-* You are good to go
+[![Watch the video](https://img.youtube.com/vi/z6JdWGjZ4yo/0.jpg)](https://youtu.be/z6JdWGjZ4yo)
 
-### Note on MinGW-64 versions
-Make sure you have a modern version of MinGW-W64 (not mingw).
-The best place to get it is from the W64devkit from
-https://github.com/skeeto/w64devkit/releases
-or the version installed with the raylib installer
-#### If you have installed raylib from the installer
-Make sure you have added the path
+---
 
-`C:\raylib\w64devkit\bin`
+## 🚀 Cómo Jugar
 
-To your path environment variable so that the compiler that came with raylib can be found.
+### 🖥️ PC
+- **Moverse:** `W` `A` `S` `D`
+- **Disparar:** Flechas (`↑`, `↓`, `←`, `→`)
+- **Usar objeto:** `Espacio`
 
-DO NOT INSTALL ANOTHER MinGW-W64 from another source such as msys2, you don't need it.
+### 🎮 Consola
+- **Moverse:** Joystick izquierdo o D-pad
+- **Disparar:** Joystick derecho o botones `A/B/X/Y` (`Triángulo`, `Círculo`, `Cruz`, `Cuadrado` en PlayStation)
+- **Usar objeto:** `R2`
 
-## Microsoft Visual Studio
-* Run `build-VisualStudio2022.bat`
-* double click the `.sln` file that is generated
-* develop your game
-* you are good to go
+### 📱 Móvil
+- **Moverse:** Círculo transparente izquierdo
+- **Disparar:** Círculo transparente derecho
+- **Usar objeto:** Botón de uso
 
-# Linux Users
-* CD into the build folder
-* run `./premake5 gmake2`
-* CD back to the root
-* run `make`
-* you are good to go
+---
 
-# MacOS Users
-* CD into the build folder
-* run `./premake5.osx gmake2`
-* CD back to the root
-* run `make`
-* you are good to go
+## 🧩 Características Principales
 
-# Output files
-The built code will be in the bin dir
+El juego está organizado en distintos **managers** que controlan aspectos clave:
 
-# Working directories and the resources folder
-The example uses a utility function from `path_utils.h` that will find the resources dir and set it as the current working directory. This is very useful when starting out. If you wish to manage your own working directory you can simply remove the call to the function and the header.
+- 🎮 `Game`: Control principal del flujo del juego  
+- 🧍 `Player`: Movimiento, disparo y control del jugador  
+- 👹 `EnemyManager`: Generación y control de enemigos  
+- 🔫 `BulletManager`: Gestión de balas del jugador y enemigos  
+- 🪙 `CoinManager`: Aparición y recolección de monedas  
+- ⚡ `PowerUpManager`: Power-ups con habilidades especiales  
+- 🖼️ `UiManager`: Interfaz de usuario y HUD  
+- 🎬 `IntroManager`: Animaciones y pantalla de introducción  
+- 📈 `LevelManager`: Progresión entre niveles  
+- 🔊 `SoundManager`: Música y efectos de sonido  
+- 📦 `ResourceManager`: Carga y gestión de recursos gráficos y de audio  
 
-# Changing to C++
-Simply rename `src/main.c` to `src/main.cpp` and re-run the steps above and do a clean build.
+---
 
-# Using your own code
-Simply remove `src/main.c` and replace it with your code, and re-run the steps above and do a clean build.
+## 👥 Desarrolladores
 
-# Building for other OpenGL targets
-If you need to build for a different OpenGL version than the default (OpenGL 3.3) you can specify an OpenGL version in your premake command line. Just modify the bat file or add the following to your command line
+- 👨‍💻 [Marc Pladellorens Pérez](https://github.com/MarcPladellorensPerez)  
+- 👨‍💻 [Ismael El Khassal Garnan](https://github.com/ismaelkhassal)  
+- 👨‍💻 [Carlos Pinheiro Carrión](https://github.com/Carlospinh)  
 
-## For OpenGL 1.1
-`--graphics=opengl11`
-
-## For OpenGL 2.1
-`--graphics=opengl21`
-
-## For OpenGL 4.3
-`--graphics=opengl43`
-
-## For OpenGLES 2.0
-`--graphics=opengles2`
-
-## For OpenGLES 3.0
-`--graphics=opengles3`
-
-# License
-Copyright (c) 2020-2025 Jeffery Myers
-
-This software is provided "as-is", without any express or implied warranty. In no event 
-will the authors be held liable for any damages arising from the use of this software.
-
-Permission is granted to anyone to use this software for any purpose, including commercial 
-applications, and to alter it and redistribute it freely, subject to the following restrictions:
-
-  1. The origin of this software must not be misrepresented; you must not claim that you 
-  wrote the original software. If you use this software in a product, an acknowledgment 
-  in the product documentation would be appreciated but is not required.
-
-  2. Altered source versions must be plainly marked as such, and must not be misrepresented
-  as being the original software.
-
-  3. This notice may not be removed or altered from any source distribution.
+📁 Repositorio del proyecto: [**The Journey of the Prairie King**](https://github.com/Carlospinh/The-Journey-of-the-Prairie-King)
