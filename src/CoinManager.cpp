@@ -15,7 +15,7 @@ void CoinManager::Update(const Player& player) {
 
         float pw = texture.width * scale;
         float ph = texture.height * scale;
-        Rectangle coinRect = { coins[i].position.x, coins[i].position.y, pw, ph };
+        Rectangle coinRect = { coins[i].position.x, coins[i].position.y, pw, ph }; 
         Rectangle playerRect = { player.GetPosition().x, player.GetPosition().y, pw, ph };
 
         if (CheckCollisionRecs(coinRect, playerRect)) {

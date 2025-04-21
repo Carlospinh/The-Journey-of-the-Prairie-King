@@ -81,7 +81,7 @@ void LevelManager::DrawOverlay(const Player& player) {
     float bgX = (SCREEN_WIDTH - bgW) / 2;
     float bgY = (SCREEN_HEIGHT - bgH) / 2;
 
-    float arrowScale = 0.18f;
+    float arrowScale = 0.18f; 
     Texture2D arrow = GetArrowTexture();
 
     if (((int)(GetTime() * 2) % 2) == 0) {

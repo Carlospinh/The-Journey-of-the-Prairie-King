@@ -20,4 +20,4 @@ private:
 
     Music music;
     bool isPlaying;
-};
+}; 

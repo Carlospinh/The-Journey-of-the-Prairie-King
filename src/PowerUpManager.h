@@ -20,7 +20,7 @@ private:
     struct PowerUp {
         Vector2 position;
         bool active;
-        float scale;
+        float scale; 
     } powerUps[MAX_POWERUPS];
 
     Texture2D texture;

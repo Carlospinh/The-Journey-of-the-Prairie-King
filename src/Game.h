@@ -16,7 +16,7 @@
 
 enum GameState {
     INTRO_1,
-    INTRO_2,
+    INTRO_2, 
     INTRO_3,
     MENU,
     PLAYING,

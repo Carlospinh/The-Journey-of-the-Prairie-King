@@ -77,4 +77,4 @@ bool PowerUpManager::IsActive() const {
 
 float PowerUpManager::GetRemainingTime() const {
     return timer;
-}
+} 

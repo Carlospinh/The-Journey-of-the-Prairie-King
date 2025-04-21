@@ -102,7 +102,7 @@ void Game::Draw() {
     }
 
     EndDrawing();
-}
+} 
 
 void Game::Close() {
     soundManager.Cleanup();

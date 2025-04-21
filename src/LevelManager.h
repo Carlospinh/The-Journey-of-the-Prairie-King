@@ -20,7 +20,7 @@ public:
 private:
     Texture2D backgrounds[2];
     Texture2D completedBG[2];
-    Texture2D level2[2];
+    Texture2D level2[2]; 
 
     int current;
     float frameTimer;

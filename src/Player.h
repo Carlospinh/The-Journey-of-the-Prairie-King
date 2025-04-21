@@ -21,8 +21,8 @@ private:
     Vector2 position;
     float speed;
     float scale;
-    int currentFrame;
-    float frameTime;
+    int currentFrame; 
+    float frameTime; 
     float frameCounter;
     bool movingLeft;
     bool movingRight;

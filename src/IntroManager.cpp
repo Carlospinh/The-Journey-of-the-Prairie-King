@@ -17,7 +17,7 @@ void IntroManager::Update(GameState& state) {
     timer += dt;
 
     if (fadingIn) {
-        alpha += dt * 2.0f;
+        alpha += dt * 2.0f; 
         if (alpha >= 1.0f) {
             alpha = 1.0f;
             fadingIn = false;

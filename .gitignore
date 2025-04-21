@@ -400,3 +400,4 @@ build_files
 raylib-master
 Makefile
 /*.sln
+/build/build_files/CoinManager.cpp

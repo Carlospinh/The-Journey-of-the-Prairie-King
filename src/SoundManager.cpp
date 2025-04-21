@@ -30,7 +30,7 @@ void SoundManager::UpdateMusic() {
     if (!IsMusicStreamPlaying(music)) PlayMusicStream(music);
 }
 
-void SoundManager::RestartMusic() {
+void SoundManager::RestartMusic()  
     StopMusicStream(music);
     PlayMusic();
 }

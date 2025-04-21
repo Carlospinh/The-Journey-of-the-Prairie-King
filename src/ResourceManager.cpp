@@ -20,7 +20,7 @@ void ResourceManager::LoadAll() {
     textures["shoot_right_idle"] = LoadTexture("resources/player/stay_shoot_right.png");
     textures["shoot_up_idle"] = LoadTexture("resources/player/stay_shoot_up.png");
 
-    textures["orc1"] = LoadTexture("resources/Enemies/Orc/Orc1.png");
+    textures["orc1"] = LoadTexture("resources/Enemies/Orc/Orc1.png"); 
     textures["orc2"] = LoadTexture("resources/Enemies/Orc/Orc2.png");
     textures["bullet"] = LoadTexture("resources/bullet/bullet.png");
     textures["coin"] = LoadTexture("resources/Coin/Coin.png");

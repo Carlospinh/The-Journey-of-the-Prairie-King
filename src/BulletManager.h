@@ -15,7 +15,7 @@ public:
 
 private:
     Texture2D texture;
-    Vector2 bullets[MAX_BULLETS];
+    Vector2 bullets[MAX_BULLETS]; 
     Vector2 directions[MAX_BULLETS];
     bool active[MAX_BULLETS];
 

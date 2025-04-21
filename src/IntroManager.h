@@ -15,7 +15,7 @@ public:
     void Unload();
 
 private:
-    Texture2D screen1, screen2, screen3;
+    Texture2D screen1, screen2, screen3; 
     float alpha;
     float timer;
     float duration;

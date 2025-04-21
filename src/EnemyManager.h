@@ -16,7 +16,7 @@ public:
 
 private:
     struct Enemy {
-        Vector2 position;
+        Vector2 position; 
         float speed;
         bool active;
         int currentFrame;

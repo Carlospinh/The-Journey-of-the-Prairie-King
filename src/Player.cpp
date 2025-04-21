@@ -94,6 +94,6 @@ int Player::Lives() const {
 void Player::Reset() {
     position = { SCREEN_WIDTH / 2.0f, SCREEN_HEIGHT / 2.0f };
     currentFrame = 1;
-    hiTimer = hiDuration;
+    hiTimer = hiDuration; 
     lives = 3;
 }

@@ -18,7 +18,7 @@ public:
 private:
     struct Coin {
         Vector2 position;
-        bool active;
+        bool active; 
         float scale;
     } coins[MAX_COINS];
 

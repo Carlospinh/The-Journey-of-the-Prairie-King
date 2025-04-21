@@ -65,7 +65,7 @@ void EnemyManager::Reset() {
 
 void EnemyManager::Spawn(const Player& player) {
     for (int i = 0; i < MAX_ENEMIES; i++) {
-        if (!enemies[i].active) {
+        if (!enemies[i].active) { 
             enemies[i].active = true;
             enemies[i].position = {
                 static_cast<float>(rand() % SCREEN_WIDTH),

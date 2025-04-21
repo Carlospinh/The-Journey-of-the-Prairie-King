@@ -12,4 +12,4 @@ public:
 
 private:
     std::unordered_map<std::string, Texture2D> textures;
-};
+}; 
