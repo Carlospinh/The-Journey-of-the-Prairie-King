@@ -16,7 +16,7 @@ void IntroManager::Init() {
 void IntroManager::Update(GameState& state) {
     float dt = GetFrameTime();
     timer += dt;
-
+     
     if (fadingIn) {
         alpha += dt * 2.0f; 
         if (alpha >= 1.0f) {

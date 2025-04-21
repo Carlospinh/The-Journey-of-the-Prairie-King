@@ -19,7 +19,7 @@ private:
     Texture2D hiTexture;
 
     Vector2 position;
-    float speed;
+    float speed; 
     float scale;
     int currentFrame; 
     float frameTime; 

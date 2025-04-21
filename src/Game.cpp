@@ -13,7 +13,7 @@ void Game::Init() {
     // Inicializar subsistemas
     resourceManager.LoadAll();
     soundManager.LoadSounds();
-    introManager.Init();
+    introManager.Init(); 
     levelManager.Init(resourceManager);
     player.Init(resourceManager);
     enemyManager.Init(resourceManager);

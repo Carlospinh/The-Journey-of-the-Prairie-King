@@ -22,7 +22,7 @@ void Player::Init(ResourceManager& resources) {
     shootSprites[9] = resources.GetTexture("shoot_left_idle");
     shootSprites[10] = resources.GetTexture("shoot_right_idle");
     shootSprites[11] = resources.GetTexture("shoot_up_idle");
-
+     
     position = { SCREEN_WIDTH / 2.0f, SCREEN_HEIGHT / 2.0f };
     speed = 200.0f;
     scale = 3.0f;
