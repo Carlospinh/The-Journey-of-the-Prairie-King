@@ -401,6 +401,3 @@ raylib-master
 Makefile
 /*.sln
 /build/build_files/CoinManager.cpp
-/include/BulletManager.h
-/include/CoinManager.h
-/src/LevelManager.cpp

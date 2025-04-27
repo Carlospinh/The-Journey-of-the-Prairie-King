@@ -25,14 +25,14 @@ void SoundManager::PlayMusic() {
     isPlaying = true;
 }
 
+void SoundManager::RestartMusic() {
+    StopMusicStream(music);
+    PlayMusic();
+}
+
 void SoundManager::UpdateMusic() {
     if (isPlaying) UpdateMusicStream(music);
     if (!IsMusicStreamPlaying(music)) PlayMusicStream(music);
-}
-
-void SoundManager::RestartMusic()  
-    StopMusicStream(music);
-    PlayMusic();
 }
 
 void SoundManager::Cleanup() {

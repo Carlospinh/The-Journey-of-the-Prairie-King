@@ -10,9 +10,24 @@
 #include "LevelManager.h"
 #include "SoundManager.h"
 #include "ResourceManager.h"
+#include "GameState.h"
 
 class Game {
 public:
+    Game() :
+        currentGameState(INTRO_1),
+        player(),
+        enemyManager(),
+        coinManager(),
+        powerUpManager(),
+        bulletManager(),
+        uiManager(),
+        introManager(),
+        levelManager(),
+        soundManager(),
+        resourceManager() {
+    }
+
     void Init();
     void Update();
     void Draw();

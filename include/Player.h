@@ -5,6 +5,8 @@
 
 class Player {
 public:
+    Player(); // Constructor añadido
+
     void Init(ResourceManager& resources);
     void Update(float deltaTime);
     void Draw();
@@ -19,10 +21,10 @@ private:
     Texture2D hiTexture;
 
     Vector2 position;
-    float speed; 
+    float speed;
     float scale;
-    int currentFrame; 
-    float frameTime; 
+    int currentFrame;
+    float frameTime;
     float frameCounter;
     bool movingLeft;
     bool movingRight;

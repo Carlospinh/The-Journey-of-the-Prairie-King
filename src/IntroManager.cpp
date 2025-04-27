@@ -1,5 +1,6 @@
 #include "IntroManager.h"
 #include "GameState.h"
+#include "raylib.h"
 
 void IntroManager::Init() {
     screen1 = LoadTexture("resources/StartScreens/screen1.png");
@@ -16,9 +17,9 @@ void IntroManager::Init() {
 void IntroManager::Update(GameState& state) {
     float dt = GetFrameTime();
     timer += dt;
-     
+
     if (fadingIn) {
-        alpha += dt * 2.0f; 
+        alpha += dt * 2.0f;
         if (alpha >= 1.0f) {
             alpha = 1.0f;
             fadingIn = false;
@@ -53,7 +54,7 @@ void IntroManager::Draw(GameState state) {
         screen = &screen1;
     }
     else if (state == INTRO_2) {
-        text = "Made by our student team and mentor.";
+        text = "Our Team and Mentor";
         screen = &screen2;
     }
     else if (state == INTRO_3) {
@@ -64,10 +65,15 @@ void IntroManager::Draw(GameState state) {
     Vector2 textSize = MeasureTextEx(GetFontDefault(), text, 30, 1);
     DrawText(text, (SCREEN_WIDTH - textSize.x) / 2, SCREEN_HEIGHT / 4, 30, Fade(WHITE, alpha));
 
-    float scale = 0.7f;
-    float w = screen->width * scale;
-    float h = screen->height * scale;
-    DrawTextureEx(*screen, { (SCREEN_WIDTH - w) / 2, SCREEN_HEIGHT / 2 - h / 2 }, 0.0f, scale, Fade(WHITE, alpha));
+    if (screen != nullptr) {
+        float scale = 0.7f;
+        float w = screen->width * scale;
+        float h = screen->height * scale;
+        DrawTextureEx(*screen, { (SCREEN_WIDTH - w) / 2, SCREEN_HEIGHT / 2 - h / 2 }, 0.0f, scale, Fade(WHITE, alpha));
+    }
+    else {
+        TraceLog(LOG_WARNING, "IntroManager: screen pointer is null!");
+    }
 }
 
 void IntroManager::Unload() {

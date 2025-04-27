@@ -22,7 +22,7 @@ void Player::Init(ResourceManager& resources) {
     shootSprites[9] = resources.GetTexture("shoot_left_idle");
     shootSprites[10] = resources.GetTexture("shoot_right_idle");
     shootSprites[11] = resources.GetTexture("shoot_up_idle");
-     
+
     position = { SCREEN_WIDTH / 2.0f, SCREEN_HEIGHT / 2.0f };
     speed = 200.0f;
     scale = 3.0f;
@@ -97,4 +97,19 @@ void Player::Reset() {
     currentFrame = 1;
     hiTimer = hiDuration; 
     lives = 3;
+}
+
+Player::Player()
+    : position({ 0.0f, 0.0f }),
+    speed(0.0f),
+    scale(1.0f),
+    currentFrame(0),
+    frameTime(0.0f),
+    frameCounter(0.0f),
+    movingLeft(false),
+    movingRight(false),
+    lives(0),
+    hiTimer(0.0f),
+    hiTexture({}) {
+    // No es necesario inicializar los arrays aquí si los vas a cargar en Init()
 }

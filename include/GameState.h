@@ -11,4 +11,3 @@ enum GameState {
     GAME_OVER,
     LEVEL_COMPLETED
 };
- 

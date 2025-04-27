@@ -10,7 +10,7 @@ class BulletManager {
 public:
     void Init(ResourceManager& resources);
     void Update(float deltaTime, const Player& player);
-    void Draw(); 
+    void Draw();
     void Reset();
 
 private:
