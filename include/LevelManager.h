@@ -1,36 +1,39 @@
-#pragma once
+#ifndef LEVEL_MANAGER_H
+#define LEVEL_MANAGER_H
 
-#include "raylib.h"
+#include <raylib.h>
 #include "Player.h"
-#include "ResourceManager.h"
-
-#define SCREEN_WIDTH 1920
-#define SCREEN_HEIGHT 1080
 
 class LevelManager {
 public:
-    void Init(ResourceManager& resources);
-    void UpdateTransition(float deltaTime);
-    bool ShouldTransition(const Player& player);
-    void StartTransition();
+    void Init();
+    void Update();
     void DrawBackground();
-    void DrawOverlay(const Player& player);
+    void DrawUI(const Player& player, int coins);
     void Reset();
+    void Unload();
+
+    float TimeRemaining() const { return timeRemaining; }
 
 private:
     Texture2D backgrounds[2];
-    Texture2D completedBG[2];
-    Texture2D level2[2]; 
+    Texture2D completed[2];
+    Texture2D level2[2];
+    Texture2D clock;
+    Texture2D arrow;
+    Texture2D liveIcon;
+    Texture2D powerUpCartel;
 
-    int current;
-    float frameTimer;
+    int currentBackground;
+    float frameCounter;
     float frameTime;
-    float scale;
 
-    bool transitioning;
-    float transitionProgress;
+    float timeRemaining;
+    float timeElapsed;
 
-    ResourceManager* resourceManager;
-
-    Texture2D GetArrowTexture() const;
+    float arrowTimer;
+    float arrowInterval;
+    bool arrowVisible;
 };
+
+#endif

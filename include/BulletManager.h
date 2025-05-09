@@ -1,27 +1,28 @@
-#pragma once
+#ifndef BULLET_MANAGER_H
+#define BULLET_MANAGER_H
 
-#include "raylib.h"
-#include "Player.h"
-#include "ResourceManager.h"
-
-#define MAX_BULLETS 100
+#include <raylib.h>
 
 class BulletManager {
 public:
-    void Init(ResourceManager& resources);
-    void Update(float deltaTime, const Player& player);
+    void Init();
+    void Update(float deltaTime);
     void Draw();
+    void Shoot(Vector2 origin, Vector2 direction);
+    void ShootCircle(Vector2 origin);
+    bool CheckCollision(Rectangle target);
     void Reset();
+    void Unload();
 
 private:
-    Texture2D texture;
-    Vector2 bullets[MAX_BULLETS]; 
+    static const int MAX_BULLETS = 50;
+    Vector2 bullets[MAX_BULLETS];
     Vector2 directions[MAX_BULLETS];
     bool active[MAX_BULLETS];
-
-    float scale;
+    Texture2D texture;
     float speed;
-    float cooldown;
-    float lastShotTime;
-    int bulletCount;
+    float scale;
+    int count;
 };
+
+#endif

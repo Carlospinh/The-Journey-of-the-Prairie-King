@@ -1,50 +1,64 @@
-#pragma once
+#ifndef GAME_H
+#define GAME_H
 
 #include "Player.h"
 #include "EnemyManager.h"
-#include "CoinManager.h"
-#include "PowerUpManager.h"
 #include "BulletManager.h"
-#include "UIManager.h"
+#include "PowerUpManager.h"
+#include "CoinManager.h"
 #include "IntroManager.h"
+#include "MenuManager.h"
 #include "LevelManager.h"
-#include "SoundManager.h"
-#include "ResourceManager.h"
-#include "GameState.h"
+#include <raylib.h>
 
 class Game {
 public:
-    Game() :
-        currentGameState(INTRO_1),
-        player(),
-        enemyManager(),
-        coinManager(),
-        powerUpManager(),
-        bulletManager(),
-        uiManager(),
-        introManager(),
-        levelManager(),
-        soundManager(),
-        resourceManager() {
-    }
+    Game();
+    ~Game();
 
     void Init();
+    void Run();
     void Update();
     void Draw();
-    void Close();
-    void Reset();
+    void Shutdown();
 
 private:
-    GameState currentGameState;
+    enum class GameState {
+        Intro1,
+        Intro2,
+        Intro3,
+        Menu,
+        Playing,
+        GameOver,
+        LevelCompleted
+    } currentState;
 
     Player player;
     EnemyManager enemyManager;
-    CoinManager coinManager;
-    PowerUpManager powerUpManager;
     BulletManager bulletManager;
-    UIManager uiManager;
+    PowerUpManager powerUpManager;
+    CoinManager coinManager;
     IntroManager introManager;
+    MenuManager menuManager;
     LevelManager levelManager;
-    SoundManager soundManager;
-    ResourceManager resourceManager;
+
+    Music backgroundMusic;
+    Sound startSound;
+    bool isMusicPlaying;
+
+    int coinsCollected;
+
+    void UpdateIntro();
+    void UpdateMenu();
+    void UpdatePlaying();
+    void UpdateGameOver();
+    void UpdateLevelCompleted();
+
+    void DrawIntro();
+    void DrawMenu();
+    void DrawPlaying();
+    void DrawGameOver();
+    void DrawLevelCompleted();
 };
+
+#endif

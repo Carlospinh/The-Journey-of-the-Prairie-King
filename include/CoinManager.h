@@ -1,28 +1,27 @@
-#pragma once
+#ifndef COIN_MANAGER_H
+#define COIN_MANAGER_H
 
-#include "raylib.h"
-#include "Player.h"
-#include "ResourceManager.h"
-
-#define MAX_COINS 50
+#include <raylib.h>
 
 class CoinManager {
 public:
-    void Init(ResourceManager& resources);
-    void Update(const Player& player);
+    void Init();
+    void Update(Vector2 playerPos);
     void Draw();
     void Spawn(Vector2 position);
     void Reset();
-    int GetCollected() const;
+    void Unload();
 
 private:
+    static const int MAX_COINS = 20;
     struct Coin {
         Vector2 position;
-        bool active; 
         float scale;
+        bool active;
     } coins[MAX_COINS];
 
     Texture2D texture;
     float scale;
-    int collected;
 };
+
+#endif

@@ -1,35 +1,44 @@
-#pragma once
+#ifndef PLAYER_H
+#define PLAYER_H
 
-#include "raylib.h"
-#include "ResourceManager.h"
+#include <raylib.h>
 
 class Player {
 public:
-    Player(); // Constructor añadido
-
-    void Init(ResourceManager& resources);
+    void Init();
     void Update(float deltaTime);
     void Draw();
-    Texture2D GetCurrentTexture() const;
-    Vector2 GetPosition() const;
-    int Lives() const;
     void Reset();
+    void Unload();
+
+    Vector2 GetPosition() const;
+    void SetPosition(Vector2 pos);
+    Rectangle GetBounds() const;
+
+    int GetLives() const;
+    void DecreaseLife();
+    bool IsAlive() const;
 
 private:
-    Texture2D sprites[4];
-    Texture2D shootSprites[12];
-    Texture2D hiTexture;
-
     Vector2 position;
     float speed;
-    float scale;
     int currentFrame;
-    float frameTime;
     float frameCounter;
+    float frameTime;
     bool movingLeft;
     bool movingRight;
+    float scale;
+
+    Texture2D sprites[4];
+    Texture2D shootSprites[12];
+
+    float shootAnimationTimer;
+    float shootAnimationDuration;
+    enum ShootingDirection { NONE, UP, DOWN, LEFT, RIGHT } shootDir;
 
     int lives;
-    float hiTimer;
-    const float hiDuration = 1.0f;
+
+    Texture2D GetCurrentTexture() const;
 };
+
+#endif

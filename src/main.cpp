@@ -3,12 +3,6 @@
 int main() {
     Game game;
     game.Init();
-
-    while (!WindowShouldClose()) {
-        game.Update();
-        game.Draw();
-    }
-
-    game.Close();
+    game.Run();
     return 0;
-} 
+}

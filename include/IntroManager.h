@@ -1,22 +1,22 @@
-#pragma once
-#include "raylib.h"
-#include "GameState.h"
+#ifndef INTRO_MANAGER_H
+#define INTRO_MANAGER_H
+
+#include <raylib.h>
 
 class IntroManager {
 public:
     void Init();
-    void Update(GameState& state);
-    void Draw(GameState state);
     void Unload();
+    bool Update(int& gameState);
+    void Draw(int gameState);
 
 private:
-    Texture2D screen1;
-    Texture2D screen2;
-    Texture2D screen3;
-    float alpha;
+    Texture2D screens[3];
     float timer;
     float duration;
+    float alpha;
     bool fadingIn;
     bool fadingOut;
-    Sound startSound; // NUEVO
 };
+
+#endif

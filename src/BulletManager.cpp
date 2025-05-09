@@ -1,93 +1,106 @@
 #include "BulletManager.h"
-#include "raylib.h"
-#include <cmath>
+#include <math.h>
 
-void BulletManager::Init(ResourceManager& resources) {
-    texture = resources.GetTexture("bullet");
-    scale = 3.5f;
+void BulletManager::Init() {
+    texture = LoadTexture("resources/bullet/bullet.png");
     speed = 300.0f;
-    cooldown = 0.2f;
-    lastShotTime = 0.0f;
-
-    #define SCREEN_WIDTH 1920
-    #define SCREEN_HEIGHT 1080
-
-
-    for (int i = 0; i < MAX_BULLETS; i++) {
+    scale = 3.5f;
+    count = 0;
+    for (int i = 0; i < MAX_BULLETS; ++i) {
         active[i] = false;
     }
-
-    bulletCount = 0;
 }
 
-void BulletManager::Update(float deltaTime, const Player& player) {
-    float currentTime = GetTime();
+void BulletManager::Update(float deltaTime) {
+    float bgScale = 3.8f;
+    float bgWidth = 860 * bgScale;
+    float bgHeight = 860 * bgScale;
+    float bgX = (1920 - bgWidth) / 2;
+    float bgY = (1080 - bgHeight) / 2;
 
-    if (currentTime - lastShotTime >= cooldown && bulletCount < MAX_BULLETS) {
-        Vector2 dir = { 0, 0 };
-        bool shoot = false;
-
-        if (IsKeyPressed(KEY_UP)) {
-            dir = { 0, -1 };
-            shoot = true;
-        }
-        else if (IsKeyPressed(KEY_DOWN)) {
-            dir = { 0, 1 };
-            shoot = true;
-        }
-        else if (IsKeyPressed(KEY_LEFT)) {
-            dir = { -1, 0 };
-            shoot = true;
-        }
-        else if (IsKeyPressed(KEY_RIGHT)) {
-            dir = { 1, 0 };
-            shoot = true;
-        }
-
-        if (shoot) {
-            for (int i = 0; i < MAX_BULLETS; i++) {
-                if (!active[i]) {
-                    Vector2 center = player.GetPosition();
-                    bullets[i] = {
-                        center.x + dir.x * 20,
-                        center.y + dir.y * 20
-                    };
-                    directions[i] = dir;
-                    active[i] = true;
-                    bulletCount++;
-                    lastShotTime = currentTime;
-                    break;
-                } 
-            }
-        }
-    }
-
-    for (int i = 0; i < MAX_BULLETS; i++) {
+    for (int i = 0; i < MAX_BULLETS; ++i) {
         if (active[i]) {
             bullets[i].x += directions[i].x * speed * deltaTime;
             bullets[i].y += directions[i].y * speed * deltaTime;
 
-            if (bullets[i].x < 0 || bullets[i].x > SCREEN_WIDTH ||
-                bullets[i].y < 0 || bullets[i].y > SCREEN_HEIGHT) {
+            if (bullets[i].x < bgX || bullets[i].x > bgX + bgWidth ||
+                bullets[i].y < bgY || bullets[i].y > bgY + bgHeight) {
                 active[i] = false;
-                bulletCount--;
+                count--;
             }
         }
     }
 }
 
 void BulletManager::Draw() {
-    for (int i = 0; i < MAX_BULLETS; i++) {
+    for (int i = 0; i < MAX_BULLETS; ++i) {
         if (active[i]) {
             DrawTextureEx(texture, bullets[i], 0.0f, scale, WHITE);
         }
     }
 }
 
+void BulletManager::Shoot(Vector2 origin, Vector2 direction) {
+    if (count >= MAX_BULLETS) return;
+
+    for (int i = 0; i < MAX_BULLETS; ++i) {
+        if (!active[i]) {
+            bullets[i] = {
+                origin.x - texture.width * scale / 2 + direction.x * 20,
+                origin.y - texture.height * scale / 2 + direction.y * 20
+            };
+            directions[i] = direction;
+            active[i] = true;
+            count++;
+            break;
+        }
+    }
+}
+
+void BulletManager::ShootCircle(Vector2 origin) {
+    if (count >= MAX_BULLETS - 8) return;
+
+    for (int i = 0; i < 8; ++i) {
+        float angle = i * 45.0f * DEG2RAD;
+        Vector2 dir = { cosf(angle), sinf(angle) };
+
+        for (int j = 0; j < MAX_BULLETS; ++j) {
+            if (!active[j]) {
+                bullets[j] = {
+                    origin.x - texture.width * scale / 2,
+                    origin.y - texture.height * scale / 2
+                };
+                directions[j] = dir;
+                active[j] = true;
+                count++;
+                break;
+            }
+        }
+    }
+}
+
+bool BulletManager::CheckCollision(Rectangle target) {
+    for (int i = 0; i < MAX_BULLETS; ++i) {
+        if (active[i]) {
+            Rectangle b = { bullets[i].x, bullets[i].y,
+                texture.width * scale, texture.height * scale };
+            if (CheckCollisionRecs(b, target)) {
+                active[i] = false;
+                count--;
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 void BulletManager::Reset() {
-    for (int i = 0; i < MAX_BULLETS; i++) {
+    for (int i = 0; i < MAX_BULLETS; ++i) {
         active[i] = false;
     }
-    bulletCount = 0;
-    lastShotTime = 0.0f;
+    count = 0;
+}
+
+void BulletManager::Unload() {
+    UnloadTexture(texture);
 }
