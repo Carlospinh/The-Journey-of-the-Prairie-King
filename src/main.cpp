@@ -1,8 +1,14 @@
-#include "Game.h"
+#include "../include/GameManager.h"
 
 int main() {
-    Game game;
-    game.Init();
-    game.Run();
+    GameManager game;
+    
+    game.InitGame();
+    
+    while (!game.ShouldClose()) {
+        game.Update();
+        game.Draw();
+    }
+    
     return 0;
 }
