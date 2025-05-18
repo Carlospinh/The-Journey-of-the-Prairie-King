@@ -84,3 +84,23 @@ bool Enemy::IsOutOfBounds(float bgX, float bgY, float bgWidth, float bgHeight) c
             position.y < bgY - 150 || 
             position.y > bgY + bgHeight + 150);
 }
+
+void Enemy::HandleObstacleCollision(Rectangle obstacle) {
+    Rectangle enemyRect = GetCollisionRect();
+    
+    if (!CheckCollisionRecs(enemyRect, obstacle)) return;
+    
+    // Resolve collision by pushing enemy away from obstacle
+    if (position.x + enemyRect.width > obstacle.x && position.x < obstacle.x) {
+        position.x = obstacle.x - enemyRect.width;
+    }
+    if (position.x < obstacle.x + obstacle.width && position.x + enemyRect.width > obstacle.x + obstacle.width) {
+        position.x = obstacle.x + obstacle.width;
+    }
+    if (position.y + enemyRect.height > obstacle.y && position.y < obstacle.y) {
+        position.y = obstacle.y - enemyRect.height;
+    }
+    if (position.y < obstacle.y + obstacle.height && position.y + enemyRect.height > obstacle.y + obstacle.height) {
+        position.y = obstacle.y + obstacle.height;
+    }
+}

@@ -166,25 +166,25 @@ void Player::Shoot(Bullet bullets[], int& bulletCount, float deltaTime) {
     bool shouldShoot = false;
     
     if (IsKeyPressed(KEY_UP)) {
-        bulletDir = Vector2{ 0, -1 };
+        bulletDir = Vector2 { 0, -1 };
         shouldShoot = true;
         currentShootDirection = UP;
         shootAnimationTimer = shootAnimationDuration;
     }
     if (IsKeyPressed(KEY_DOWN)) {
-        bulletDir = Vector2{ 0, 1 };
+        bulletDir = Vector2 { 0, 1 };
         shouldShoot = true;
         currentShootDirection = DOWN;
         shootAnimationTimer = shootAnimationDuration;
     }
     if (IsKeyPressed(KEY_LEFT)) {
-        bulletDir = Vector2{ -1, 0 };
+        bulletDir = Vector2 { -1, 0 };
         shouldShoot = true;
         currentShootDirection = LEFT;
         shootAnimationTimer = shootAnimationDuration;
     }
     if (IsKeyPressed(KEY_RIGHT)) {
-        bulletDir = Vector2{ 1, 0 };
+        bulletDir = Vector2 { 1, 0 };
         shouldShoot = true;
         currentShootDirection = RIGHT;
         shootAnimationTimer = shootAnimationDuration;

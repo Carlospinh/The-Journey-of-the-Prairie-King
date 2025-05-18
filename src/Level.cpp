@@ -30,14 +30,47 @@ void Level::LoadResources(int levelNumber) {
     
     char path1[100], path2[100], compPath1[100], compPath2[100];
     
-    // Fix: Using correct filename patterns that match the actual files
-    sprintf(path1, "levels/Level_%d.png", levelNumber);
-    sprintf(path2, "levels/Level_%d_2.png", levelNumber);
-    sprintf(compPath1, "levels/Level%d_Completed1.png", levelNumber);
-    sprintf(compPath2, "levels/Level%d_Completed2.png", levelNumber);
+    // Use correct filename patterns that match the actual files
+    if (levelNumber == 1) {
+        // Level 1 has different naming pattern
+        sprintf(path1, "levels/Level_1.png");
+        sprintf(path2, "levels/Level_1_2.png");
+        sprintf(compPath1, "levels/Level1_Completed1.png");
+        sprintf(compPath2, "levels/Level1_Completed2.png");
+    } else if (levelNumber >= 3 && levelNumber <= 7) {
+        // Level 3-7 follow this pattern
+        sprintf(path1, "levels/Level_%d.png", levelNumber);
+        sprintf(path2, "levels/Level_%d_2.png", levelNumber);
+        sprintf(compPath1, "levels/Level_%d_Completed_1.png", levelNumber);
+        sprintf(compPath2, "levels/Level_%d_Completed_2.png", levelNumber);
+    } else if (levelNumber >= 8 && levelNumber <= 9) {
+        // Level 8-9 only have one frame for each state
+        sprintf(path1, "levels/Level_%d_1.png", levelNumber);
+        sprintf(path2, "levels/Level_%d_1.png", levelNumber); // Use same frame twice
+        sprintf(compPath1, "levels/Level_%d_Completed_1.png", levelNumber);
+        sprintf(compPath2, "levels/Level_%d_Completed_1.png", levelNumber); // Use same frame twice
+    } else {
+        // Level 2 follows this pattern
+        sprintf(path1, "levels/Level_%d.png", levelNumber);
+        sprintf(path2, "levels/Level_%d_2.png", levelNumber);
+        sprintf(compPath1, "levels/Level_%d_Completed_1.png", levelNumber);
+        sprintf(compPath2, "levels/Level_%d_Completed_2.png", levelNumber);
+    }
     
+    // Try to load backgrounds
     backgrounds[0] = LoadTexture(path1);
+    
+    // Check if the texture was loaded successfully
+    if (backgrounds[0].id == 0) {
+        TraceLog(LOG_WARNING, "Failed to load texture: %s", path1);
+    }
+    
     backgrounds[1] = LoadTexture(path2);
+    if (backgrounds[1].id == 0) {
+        TraceLog(LOG_WARNING, "Failed to load texture: %s", path2);
+        // If second frame failed to load, use the first frame as fallback
+        backgrounds[1] = backgrounds[0];
+    }
     
     // Try to load completed backgrounds, if they exist
     // If they don't exist, use copies of the regular backgrounds
@@ -45,6 +78,10 @@ void Level::LoadResources(int levelNumber) {
     if ((file = fopen(compPath1, "r"))) {
         fclose(file);
         completedBackgrounds[0] = LoadTexture(compPath1);
+        if (completedBackgrounds[0].id == 0) {
+            TraceLog(LOG_WARNING, "Failed to load texture: %s", compPath1);
+            completedBackgrounds[0] = backgrounds[0];
+        }
     } else {
         completedBackgrounds[0] = backgrounds[0];
     }
@@ -52,6 +89,10 @@ void Level::LoadResources(int levelNumber) {
     if ((file = fopen(compPath2, "r"))) {
         fclose(file);
         completedBackgrounds[1] = LoadTexture(compPath2);
+        if (completedBackgrounds[1].id == 0) {
+            TraceLog(LOG_WARNING, "Failed to load texture: %s", compPath2);
+            completedBackgrounds[1] = backgrounds[1];
+        }
     } else {
         completedBackgrounds[1] = backgrounds[1];
     }
@@ -95,6 +136,73 @@ void Level::LoadResources(int levelNumber) {
     // Top barriers with gap in the middle (for the entry point) - moved inward
     obstacles[0] = Rectangle{ bgX + offset, bgY + offset, halfWidth, thickness };
     obstacles[8] = Rectangle{ bgX + offset + halfWidth + gapWidth, bgY + offset, halfWidth, thickness };
+    
+    // Add level 2 specific inner walls at the specified tile coordinates
+    // The coordinates are in a 16x16 grid, so we need to convert them to screen coordinates
+    if (levelNumber == 2) {
+        float tileWidth = bgWidth / 16.0f;
+        float tileHeight = bgHeight / 16.0f;
+    
+        // Top-left L-shape
+        obstacles[9] = Rectangle{
+            bgX + 4 * tileWidth,
+            bgY + 4 * tileHeight,
+            2 * tileWidth,
+            tileHeight
+        };
+        obstacles[10] = Rectangle{
+            bgX + 4 * tileWidth,
+            bgY + 4 * tileHeight,
+            tileWidth,
+            2 * tileHeight
+        };
+    
+        // Top-right L-shape (moved one column right)
+        obstacles[11] = Rectangle{
+            bgX + 11 * tileWidth, // 9 -> 10
+            bgY + 4 * tileHeight,
+            2 * tileWidth,
+            tileHeight
+        };
+        obstacles[12] = Rectangle{
+            bgX + 12 * tileWidth, // 11 -> 12
+            bgY + 4 * tileHeight,
+            tileWidth,
+            2 * tileHeight
+        };
+    
+        // Bottom-left L-shape (already moved down one row)
+        obstacles[13] = Rectangle{
+            bgX + 4 * tileWidth,
+            bgY + 11 * tileHeight,
+            tileWidth,
+            2 * tileHeight
+        };
+        obstacles[14] = Rectangle{
+            bgX + 4 * tileWidth,
+            bgY + 12 * tileHeight,
+            2 * tileWidth,
+            tileHeight
+        };
+    
+        // Bottom-right L-shape (moved one column right + already moved down one row)
+        obstacles[15] = Rectangle{
+            bgX + 12 * tileWidth, // 11 -> 12
+            bgY + 11 * tileHeight,
+            tileWidth,
+            2* tileHeight
+        };
+        obstacles[16] = Rectangle{
+            bgX + 11 * tileWidth, // 9 -> 10
+            bgY + 12 * tileHeight,
+            2 * tileWidth,
+            tileHeight
+        };
+    }
+    
+    // Configure obstacles for levels 3-9 as needed
+    // For now, we'll use the same basic obstacles for all levels except level 2
+    // You can add specific obstacle configurations for each level here
 }
 
 void Level::UnloadResources() {
@@ -235,7 +343,8 @@ void Level::Draw() {
         
         // Always draw the obstacle blocks during transition (even when map is gone)
         // This creates the effect of only cubes remaining after the level slides away
-        for (int i = 0; i < 9; i++) {
+        int obstacleCount = GetObstacleCount();
+        for (int i = 0; i < obstacleCount; i++) {
             DrawRectangleLinesEx(obstacles[i], 2, DARKGRAY);
         }
     }
@@ -244,7 +353,8 @@ void Level::Draw() {
         DrawTexturePro(backgrounds[currentBackground], sourceRec, destRec, origin, 0.0f, WHITE);
         
         // Draw obstacle blocks on top of the background
-        for (int i = 0; i < 9; i++) {
+        int obstacleCount = GetObstacleCount();
+        for (int i = 0; i < obstacleCount; i++) {
             DrawRectangleLinesEx(obstacles[i], 2, DARKGRAY);
         }
     }
@@ -278,14 +388,19 @@ Rectangle Level::GetLevelBounds() const {
 }
 
 Rectangle Level::GetObstacle(int index) const {
-    if (index >= 0 && index < 9) {
+    // For level 2, we have additional inner walls (up to index 16)
+    // For other levels, we only have the standard 9 obstacles
+    int maxIndex = (currentLevel == 2) ? 16 : 8;
+    
+    if (index >= 0 && index <= maxIndex) {
         return obstacles[index];
     }
     return Rectangle{ 0, 0, 0, 0 };
 }
 
 int Level::GetObstacleCount() const {
-    return 9; // Fixed number in original code
+    // Return the appropriate number of obstacles based on the current level
+    return (currentLevel == 2) ? 17 : 9;
 }
 
 bool Level::ShouldShowArrow() const {

@@ -38,6 +38,9 @@ public:
     
     // Check if enemy is outside level boundaries
     bool IsOutOfBounds(float bgX, float bgY, float bgWidth, float bgHeight) const;
+    
+    // Handle obstacle collision for enemies
+    void HandleObstacleCollision(Rectangle obstacle);
 };
 
 #endif // ENEMY_H

@@ -223,7 +223,7 @@ void UI::DrawLevelCompleted() {
     }
 }
 
-void UI::DrawHUD(int playerLives, int coinsCollected, int enemiesKilled, float timeRemaining, bool hasWheelPowerUp, bool wheelPowerUpActive, float wheelPowerUpTimer) {
+void UI::DrawHUD(int playerLives, int coinsCollected, int enemiesKilled, float timeRemaining, bool hasWheelPowerUp, bool wheelPowerUpActive, float wheelPowerUpTimer, int currentLevel) {
     // Draw clock and time bar
     float clockScale = 0.18f;
     float clockWidth = clockTexture.width * clockScale;
@@ -248,9 +248,15 @@ void UI::DrawHUD(int playerLives, int coinsCollected, int enemiesKilled, float t
     
     DrawRectangle(progressBarX, progressBarY, remainingWidth, progressBarHeight, timeBarColor);
     
+    // Display current level
+    char levelText[50];
+    sprintf(levelText, "Level: %d/9", currentLevel);
+    DrawText(levelText, 20, 20, 25, WHITE);
+    
+    // Display enemies killed
     char killsText[50];
     sprintf(killsText, "Enemies Killed: %d", enemiesKilled); 
-    DrawText(killsText, 20, 20, 20, WHITE);
+    DrawText(killsText, 20, 50, 20, WHITE);
     
     if (liveTexture.id != 0) {
         float liveIconScale = 0.15f;
@@ -259,7 +265,7 @@ void UI::DrawHUD(int playerLives, int coinsCollected, int enemiesKilled, float t
         DrawText(TextFormat("x %d", playerLives), liveIconPos.x + liveTexture.width * liveIconScale + 10, liveIconPos.y, 30, WHITE);
     }
     else {
-        DrawText(TextFormat("Lives: %d", playerLives), 20, 50, 30, WHITE);
+        DrawText(TextFormat("Lives: %d", playerLives), 20, 80, 30, WHITE);
     }
     
     float coinIconScale = 0.4f;
@@ -269,7 +275,7 @@ void UI::DrawHUD(int playerLives, int coinsCollected, int enemiesKilled, float t
         DrawText(TextFormat("x %d", coinsCollected), coinIconPos.x + coinTexture.width * coinIconScale + 10, coinIconPos.y, 30, WHITE);
     }
     else {
-        DrawText(TextFormat("Coins: %d", coinsCollected), 20, 100, 30, WHITE);
+        DrawText(TextFormat("Coins: %d", coinsCollected), 20, 110, 30, WHITE);
     }
     
     float cartelScale = 0.2f;

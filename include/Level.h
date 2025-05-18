@@ -33,7 +33,7 @@ private:
     // Level boundaries
     Rectangle levelBounds;              // Boundaries of the level playfield
     Rectangle exitZone;                 // Exit zone for level transition
-    Rectangle obstacles[9];             // Obstacle rectangles
+    Rectangle obstacles[17];            // Obstacle rectangles (increased from 13 to 17 for L-shaped walls in level 2)
 
 public:
     Level();

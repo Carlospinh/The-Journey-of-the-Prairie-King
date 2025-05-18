@@ -59,7 +59,7 @@ void GameManager::ResetGame() {
     player.SetPosition({SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2});
     player.SetLives(3);
     
-    timeRemaining = 60.0f;
+    timeRemaining = 60.0f; // Changed from 60.0f to 3.0f for faster testing
     timeElapsed = 0.0f;
     enemiesKilled = 0;
     coinsCollected = 0;
@@ -169,8 +169,8 @@ void GameManager::UpdatePlaying(float deltaTime) {
     else {
         timeRemaining = 0;
         
-        // Check if this is level 2 and time is up (game completed)
-        if (level.GetCurrentLevel() == 2) {
+        // Check if this is level 9 and time is up (game completed)
+        if (level.GetCurrentLevel() == 9) {
             ui.SetGameState(LEVEL_COMPLETED);
             return;
         }
@@ -192,11 +192,17 @@ void GameManager::UpdatePlaying(float deltaTime) {
         level.Update(deltaTime);
         
         if (level.IsTransitionComplete()) {
-            // Reset level transition state first (important!)
+            // Store the current level number before resetting
+            int currentLevel = level.GetCurrentLevel();
+            
+            // Reset level transition state (important!)
             level = Level(); // Create a new clean level instance
             
-            // This mirrors what happens in singleFile.c when transition completes
-            level.LoadResources(2); // Load level 2
+            // Load the next level
+            int nextLevel = currentLevel + 1;
+            if (nextLevel > 9) nextLevel = 1; // Wrap around to level 1 (shouldn't happen normally)
+            
+            level.LoadResources(nextLevel); // Load next level
             timeRemaining = 60.0f;
             
             // Reset objects
@@ -248,6 +254,11 @@ void GameManager::UpdatePlaying(float deltaTime) {
                 
                 // Move enemies toward player
                 enemies[i].MoveToward(player.GetPosition(), deltaTime);
+                
+                // Check enemy-obstacle collisions
+                for (int j = 0; j < level.GetObstacleCount(); j++) {
+                    enemies[i].HandleObstacleCollision(level.GetObstacle(j));
+                }
                 
                 // Check if enemy went off-screen
                 Rectangle bounds = level.GetLevelBounds();
@@ -579,7 +590,8 @@ void GameManager::DrawPlaying() {
         timeRemaining,
         player.HasWheelPowerUp(),
         player.IsWheelPowerUpActive(),
-        player.GetWheelPowerUpTimer()  // Pass the actual timer value
+        player.GetWheelPowerUpTimer(),  // Pass the actual timer value
+        level.GetCurrentLevel()         // Pass the current level number
     );
 }
 

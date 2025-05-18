@@ -48,7 +48,7 @@ public:
     void DrawLevelCompleted();
     
     // Draw HUD elements during gameplay
-    void DrawHUD(int playerLives, int coinsCollected, int enemiesKilled, float timeRemaining, bool hasWheelPowerUp, bool wheelPowerUpActive, float wheelPowerUpTimer);
+    void DrawHUD(int playerLives, int coinsCollected, int enemiesKilled, float timeRemaining, bool hasWheelPowerUp, bool wheelPowerUpActive, float wheelPowerUpTimer, int currentLevel);
     
     // Get current game state
     GameState GetGameState() const;
