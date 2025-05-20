@@ -30,6 +30,7 @@ void UI::LoadResources() {
     coinTexture = LoadTexture("resources/Coin/Coin.png");
     powerUpCartelTexture = LoadTexture("resources/UI/PowerUpCartel.png");
     clockTexture = LoadTexture("resources/UI/Clock.png");
+    levelBallTexture = LoadTexture("resources/levelball/Level_Ball.png");
 }
 
 void UI::UnloadResources() {
@@ -46,6 +47,7 @@ void UI::UnloadResources() {
     UnloadTexture(coinTexture);
     UnloadTexture(powerUpCartelTexture);
     UnloadTexture(clockTexture);
+    UnloadTexture(levelBallTexture);  // Added this line to unload level ball texture
 }
 
 void UI::Update(float deltaTime) {
@@ -108,7 +110,7 @@ void UI::DrawIntroScreen1() {
     float imageWidth = introScreen1.width * imageScale;
     float imageHeight = introScreen1.height * imageScale;
     DrawTextureEx(introScreen1,
-        Vector2 {
+        Vector2{
         (SCREEN_WIDTH - imageWidth) / 2 + 20, SCREEN_HEIGHT / 2 - 200
     },
         0.0f, imageScale, Fade(WHITE, fadeAlpha));
@@ -123,7 +125,7 @@ void UI::DrawIntroScreen2() {
     float imageWidth = introScreen2.width * imageScale;
     float imageHeight = introScreen2.height * imageScale;
     DrawTextureEx(introScreen2,
-        Vector2 {
+        Vector2{
         (SCREEN_WIDTH - imageWidth) / 2, SCREEN_HEIGHT / 2 - 300
     },
         0.0f, imageScale, Fade(WHITE, fadeAlpha));
@@ -143,7 +145,7 @@ void UI::DrawIntroScreen3() {
     float imageWidth = introScreen3.width * imageScale;
     float imageHeight = introScreen3.height * imageScale;
     DrawTextureEx(introScreen3,
-        Vector2 {
+        Vector2{
         (SCREEN_WIDTH - imageWidth) / 2, SCREEN_HEIGHT / 2 - 200
     },
         0.0f, imageScale, Fade(WHITE, fadeAlpha));
@@ -223,7 +225,10 @@ void UI::DrawLevelCompleted() {
     }
 }
 
-void UI::DrawHUD(int playerLives, int coinsCollected, int enemiesKilled, float timeRemaining, bool hasWheelPowerUp, bool wheelPowerUpActive, float wheelPowerUpTimer, int currentLevel) {
+void UI::DrawHUD(int playerLives, int coinsCollected, int enemiesKilled, float timeRemaining, 
+              bool hasPowerUp, bool powerUpActive, float powerUpTimer, int currentLevel,
+              bool hasWheelPowerUp, bool hasShotgunPowerUp, bool hasCoffeePowerUp, bool hasNukePowerUp,
+              bool wheelPowerUpActive, bool shotgunPowerUpActive, bool coffeePowerUpActive) {
     // Draw clock and time bar
     float clockScale = 0.18f;
     float clockWidth = clockTexture.width * clockScale;
@@ -237,7 +242,7 @@ void UI::DrawHUD(int playerLives, int coinsCollected, int enemiesKilled, float t
     float progressBarX = clockX + clockWidth + spacing;
     float progressBarY = 20.0f;
     
-    DrawTextureEx(clockTexture, Vector2 { clockX, clockY }, 0.0f, clockScale, WHITE);
+    DrawTextureEx(clockTexture, Vector2{ clockX, clockY }, 0.0f, clockScale, WHITE);
     
     float remainingWidth = (timeRemaining / 60.0f) * progressBarWidth;
     DrawRectangle(progressBarX, progressBarY, progressBarWidth, progressBarHeight, BLACK);
@@ -248,16 +253,25 @@ void UI::DrawHUD(int playerLives, int coinsCollected, int enemiesKilled, float t
     
     DrawRectangle(progressBarX, progressBarY, remainingWidth, progressBarHeight, timeBarColor);
     
-    // Display current level
-    char levelText[50];
-    sprintf(levelText, "Level: %d/9", currentLevel);
-    DrawText(levelText, 20, 20, 25, WHITE);
+    // Display level using multiple level balls
+    float levelBallScale = 0.18f;
+    float levelBallSpacing = 5.0f;  // Space between balls
+    float levelBallWidth = levelBallTexture.width * levelBallScale;
+    float startX = 20;
+    float startY = 20;
+
+    // Draw level balls up to current level
+    for (int i = 0; i < currentLevel; i++) {
+        Vector2 ballPos = { startX + (levelBallWidth + levelBallSpacing) * i, startY };
+        DrawTextureEx(levelBallTexture, ballPos, 0.0f, levelBallScale, WHITE);
+    }
     
     // Display enemies killed
     char killsText[50];
-    sprintf(killsText, "Enemies Killed: %d", enemiesKilled); 
+    sprintf(killsText, "Enemies Killed: %d", enemiesKilled);
     DrawText(killsText, 20, 50, 20, WHITE);
     
+    // Draw lives
     if (liveTexture.id != 0) {
         float liveIconScale = 0.15f;
         Vector2 liveIconPos = { 340, 150 };
@@ -268,6 +282,7 @@ void UI::DrawHUD(int playerLives, int coinsCollected, int enemiesKilled, float t
         DrawText(TextFormat("Lives: %d", playerLives), 20, 80, 30, WHITE);
     }
     
+    // Draw coins
     float coinIconScale = 0.4f;
     Vector2 coinIconPos = { 350, 200 };
     if (coinTexture.id != 0) {
@@ -278,19 +293,39 @@ void UI::DrawHUD(int playerLives, int coinsCollected, int enemiesKilled, float t
         DrawText(TextFormat("Coins: %d", coinsCollected), 20, 110, 30, WHITE);
     }
     
+    // Draw power-up info
     float cartelScale = 0.2f;
     Vector2 cartelPos = { 350, 30 };
     DrawTextureEx(powerUpCartelTexture, cartelPos, 0.0f, cartelScale, WHITE);
     
+    // Get all power-up textures
     Texture2D wheelTexture = PowerUp::GetWheelTexture();
+    Texture2D shotgunTexture = PowerUp::GetShotgunTexture();
+    Texture2D coffeeTexture = PowerUp::GetCoffeeTexture();
+    Texture2D nukeTexture = PowerUp::GetNukeTexture();
     
-    if (hasWheelPowerUp && !wheelPowerUpActive) {
-        float powerUpIconScale = 0.15f;
-        Vector2 wheelIconPos = {
-            cartelPos.x + (powerUpCartelTexture.width * cartelScale / 2) - (wheelTexture.width * powerUpIconScale / 2),
-            cartelPos.y + (powerUpCartelTexture.height * cartelScale / 2) - (wheelTexture.height * powerUpIconScale / 2)
+    // Show power-up if available or active
+    float powerUpIconScale = 0.15f;
+    
+    if (hasPowerUp && !powerUpActive) {
+        // Determine which powerup to display based on what player has
+        Texture2D iconTexture = wheelTexture; // Default fallback
+        
+        if (hasWheelPowerUp) {
+            iconTexture = wheelTexture;
+        } else if (hasShotgunPowerUp) {
+            iconTexture = shotgunTexture;
+        } else if (hasCoffeePowerUp) {
+            iconTexture = coffeeTexture;
+        } else if (hasNukePowerUp) {
+            iconTexture = nukeTexture;
+        }
+        
+        Vector2 iconPos = {
+            cartelPos.x + (powerUpCartelTexture.width * cartelScale / 2) - (iconTexture.width * powerUpIconScale / 2),
+            cartelPos.y + (powerUpCartelTexture.height * cartelScale / 2) - (iconTexture.height * powerUpIconScale / 2)
         };
-        DrawTextureEx(wheelTexture, wheelIconPos, 0.0f, powerUpIconScale, WHITE);
+        DrawTextureEx(iconTexture, iconPos, 0.0f, powerUpIconScale, WHITE);
         
         const char* text = "Press SPACE";
         Vector2 textSize = MeasureTextEx(GetFontDefault(), text, 20, 1);
@@ -299,14 +334,32 @@ void UI::DrawHUD(int playerLives, int coinsCollected, int enemiesKilled, float t
             cartelPos.y + powerUpCartelTexture.height * cartelScale + 5,
             20, WHITE);
     }
-    
-    if (wheelPowerUpActive) {
+    else if (powerUpActive) {
+        // Show active power-up with timer
         char timerText[20];
-        sprintf(timerText, "%.1f", wheelPowerUpTimer);
+        sprintf(timerText, "%.1f", powerUpTimer);
         Vector2 textSize = MeasureTextEx(GetFontDefault(), timerText, 20, 1);
+        
+        // Determine which active powerup to display
+        Texture2D iconTexture = wheelTexture; // Default fallback
+        
+        if (wheelPowerUpActive) {
+            iconTexture = wheelTexture;
+        } else if (shotgunPowerUpActive) {
+            iconTexture = shotgunTexture;
+        } else if (coffeePowerUpActive) {
+            iconTexture = coffeeTexture;
+        }
+        
+        Vector2 iconPos = {
+            cartelPos.x + (powerUpCartelTexture.width * cartelScale / 2) - (iconTexture.width * powerUpIconScale / 2),
+            cartelPos.y + (powerUpCartelTexture.height * cartelScale / 2) - (iconTexture.height * powerUpIconScale / 2) - 10
+        };
+        DrawTextureEx(iconTexture, iconPos, 0.0f, powerUpIconScale, WHITE);
+        
         DrawText(timerText,
             cartelPos.x + (powerUpCartelTexture.width * cartelScale / 2) - (textSize.x / 2),
-            cartelPos.y + (powerUpCartelTexture.height * cartelScale / 2) - (textSize.y / 2),
+            cartelPos.y + (powerUpCartelTexture.height * cartelScale / 2) + 15,
             20, RED);
     }
 }

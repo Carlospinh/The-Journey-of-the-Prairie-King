@@ -8,8 +8,22 @@ GameManager::GameManager()
     timeElapsed(0.0f),
     enemiesKilled(0),
     coinsCollected(0),
+    // PowerUp - Wheel
     wheelPowerUpOnField(false),
     wheelDropCooldown(0.0f),
+    // PowerUp - Shotgun
+    shotgunPowerUpOnField(false),
+    shotgunDropCooldown(0.0f),
+    // PowerUp - Coffee
+    coffeePowerUpOnField(false),
+    coffeeDropCooldown(0.0f),
+    // PowerUp - Nuke
+    nukePowerUpOnField(false),
+    nukeDropCooldown(0.0f),
+    // PowerUp drop timing
+    powerUpDropTimer(0.0f),
+    powerUpDropInterval(10.0f),
+    // Enemy spawn timing
     enemySpawnTimer(0.0f),
     enemySpawnInterval(2.0f) {
 }
@@ -59,14 +73,28 @@ void GameManager::ResetGame() {
     player.SetPosition({SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2});
     player.SetLives(3);
     
-    timeRemaining = 60.0f; // Changed from 60.0f to 3.0f for faster testing
+    timeRemaining = 60.0f;
     timeElapsed = 0.0f;
     enemiesKilled = 0;
     coinsCollected = 0;
     
+    // Reset PowerUp states
     player.SetWheelPowerUp(false);
+    player.SetShotgunPowerUp(false);
+    player.SetCoffeePowerUp(false); 
+    player.SetNukePowerUp(false);
+    
     wheelPowerUpOnField = false;
+    shotgunPowerUpOnField = false;
+    coffeePowerUpOnField = false;
+    nukePowerUpOnField = false;
+    
     wheelDropCooldown = 0.0f;
+    shotgunDropCooldown = 0.0f;
+    coffeeDropCooldown = 0.0f;
+    nukeDropCooldown = 0.0f;
+    
+    powerUpDropTimer = 0.0f;
     
     // Reset level
     level.LoadResources(1);
@@ -222,9 +250,54 @@ void GameManager::UpdatePlaying(float deltaTime) {
     // Update player
     player.Update(deltaTime);
     
+    // Update power-up timer for random power-up spawns
+    powerUpDropTimer += deltaTime;
+    if (powerUpDropTimer >= powerUpDropInterval) {
+        powerUpDropTimer = 0;
+        
+        // Only try to spawn a power-up if we're not transitioning and none are already on the field
+        if (!level.IsTransitioning() && 
+            !wheelPowerUpOnField && !shotgunPowerUpOnField && 
+            !coffeePowerUpOnField && !nukePowerUpOnField) {
+            
+            // Calculate random position within level bounds
+            Rectangle bounds = level.GetLevelBounds();
+            float paddingX = bounds.width * 0.15f;
+            float paddingY = bounds.height * 0.15f;
+            
+            Vector2 spawnPos = { 
+                bounds.x + paddingX + static_cast<float>(rand()) / (RAND_MAX / (bounds.width - 2 * paddingX)),
+                bounds.y + paddingY + static_cast<float>(rand()) / (RAND_MAX / (bounds.height - 2 * paddingY))
+            };
+            
+            // Random power-up type
+            int powerUpType = rand() % 4;
+            SpawnSpecificPowerUp(spawnPos, static_cast<PowerUpType>(powerUpType));
+        }
+    }
+    
     // Handle player power-up activation
-    if (player.HasWheelPowerUp() && IsKeyPressed(KEY_SPACE) && !player.IsWheelPowerUpActive() && !level.IsTransitioning()) {
-        player.ActivateWheelPowerUp();
+    if (!level.IsTransitioning()) {
+        // Wheel power-up activation
+        if (player.HasWheelPowerUp() && IsKeyPressed(KEY_SPACE) && !player.IsWheelPowerUpActive()) {
+            player.ActivateWheelPowerUp();
+        }
+        
+        // Shotgun power-up activation
+        if (player.HasShotgunPowerUp() && IsKeyPressed(KEY_SPACE) && !player.IsShotgunPowerUpActive()) {
+            player.ActivateShotgunPowerUp();
+        }
+        
+        // Coffee power-up activation
+        if (player.HasCoffeePowerUp() && IsKeyPressed(KEY_SPACE) && !player.IsCoffeePowerUpActive()) {
+            player.ActivateCoffeePowerUp();
+        }
+        
+        // Nuke power-up activation
+        if (player.HasNukePowerUp() && IsKeyPressed(KEY_SPACE)) {
+            player.ActivateNukePowerUp();
+            HandleNukeEffect();
+        }
     }
     
     // Update player power-ups
@@ -293,17 +366,45 @@ void GameManager::UpdatePlaying(float deltaTime) {
                 
                 // Check for player-powerup collision
                 if (CheckCollisionRecs(player.GetCollisionRect(), powerUps[i].GetCollisionRect())) {
+                    PowerUpType type = powerUps[i].GetType();
                     powerUps[i].SetActive(false);
-                    player.SetWheelPowerUp(true);
-                    wheelPowerUpOnField = false;
+                    
+                    // Handle different power-up types
+                    switch (type) {
+                        case POWERUP_WHEEL:
+                            player.SetWheelPowerUp(true);
+                            wheelPowerUpOnField = false;
+                            break;
+                        case POWERUP_SHOTGUN:
+                            player.SetShotgunPowerUp(true);
+                            shotgunPowerUpOnField = false;
+                            break;
+                        case POWERUP_COFFEE:
+                            player.SetCoffeePowerUp(true);
+                            coffeePowerUpOnField = false;
+                            break;
+                        case POWERUP_NUKE:
+                            player.SetNukePowerUp(true);
+                            nukePowerUpOnField = false;
+                            break;
+                    }
+                    
                     PowerUp::PlayPickupSound();
                 }
                 
                 // Check if powerup went off-screen
                 Rectangle bounds = level.GetLevelBounds();
                 if (powerUps[i].IsOutOfBounds(bounds.x, bounds.y, bounds.width, bounds.height)) {
+                    PowerUpType type = powerUps[i].GetType();
                     powerUps[i].SetActive(false);
-                    wheelPowerUpOnField = false;
+                    
+                    // Reset the appropriate flag
+                    switch (type) {
+                        case POWERUP_WHEEL: wheelPowerUpOnField = false; break;
+                        case POWERUP_SHOTGUN: shotgunPowerUpOnField = false; break;
+                        case POWERUP_COFFEE: coffeePowerUpOnField = false; break;
+                        case POWERUP_NUKE: nukePowerUpOnField = false; break;
+                    }
                 }
             }
         }
@@ -421,13 +522,45 @@ void GameManager::SpawnEnemy() {
     for (int i = 0; i < MAX_ENEMIES; i++) {
         if (!enemies[i].IsActive()) {
             int spawnIndex = rand() % 4;
+            int currentLevel = level.GetCurrentLevel();
             
-            enemies[i].Init(spawnPositions[spawnIndex], 0.2f, 100.0f + (rand() % 50));
+            // Determine which enemy type to spawn based on level and randomness
+            EnemyType enemyType = ENEMY_ORC; // Default to Orc
+            int randomVal = rand() % 100;
+            
+            if (currentLevel >= 4) {
+                // Levels 4-9: All enemy types available
+                if (randomVal < 40) {
+                    enemyType = ENEMY_ORC;      // 40% chance
+                } else if (randomVal < 70) {
+                    enemyType = ENEMY_OGRE;     // 30% chance
+                } else {
+                    enemyType = ENEMY_MUMMY;    // 30% chance
+                }
+            } else if (currentLevel >= 2) {
+                // Levels 2-3: Only Orcs and Ogres
+                if (randomVal < 60) {
+                    enemyType = ENEMY_ORC;      // 60% chance
+                } else {
+                    enemyType = ENEMY_OGRE;     // 40% chance
+                }
+            } else {
+                // Level 1: Only Orcs
+                enemyType = ENEMY_ORC;          // 100% chance
+            }
+            
+            // Set speed based on level progression (higher levels = faster enemies)
+            float baseSpeed = 100.0f;
+            float speedBonus = currentLevel * 5.0f; // Speed increases with level
+            float randomVariation = rand() % 50;
+            float finalSpeed = baseSpeed + speedBonus + randomVariation;
+            
+            // Initialize the enemy with chosen type
+            enemies[i].Init(spawnPositions[spawnIndex], 0.2f, finalSpeed, enemyType);
             break;
         }
     }
 }
-
 void GameManager::SpawnCoin(Vector2 position) {
     for (int i = 0; i < MAX_COINS; i++) {
         if (!coins[i].IsActive()) {
@@ -438,13 +571,53 @@ void GameManager::SpawnCoin(Vector2 position) {
 }
 
 void GameManager::SpawnPowerUp(Vector2 position) {
-    // Only one wheel power-up can be active at a time
-    if (wheelPowerUpOnField || player.HasWheelPowerUp() || player.IsWheelPowerUpActive()) return;
+    // Choose a random power-up type to spawn
+    int powerUpType = rand() % 4; // 0=Wheel, 1=Shotgun, 2=Coffee, 3=Nuke
+    SpawnSpecificPowerUp(position, static_cast<PowerUpType>(powerUpType));
+}
+
+void GameManager::SpawnSpecificPowerUp(Vector2 position, PowerUpType type) {
+    // Check if this type of power-up is already on the field
+    switch (type) {
+        case POWERUP_WHEEL:
+            if (wheelPowerUpOnField || player.HasWheelPowerUp() || player.IsWheelPowerUpActive())
+                return;
+            break;
+        case POWERUP_SHOTGUN:
+            if (shotgunPowerUpOnField || player.HasShotgunPowerUp() || player.IsShotgunPowerUpActive())
+                return;
+            break;
+        case POWERUP_COFFEE:
+            if (coffeePowerUpOnField || player.HasCoffeePowerUp() || player.IsCoffeePowerUpActive())
+                return;
+            break;
+        case POWERUP_NUKE:
+            if (nukePowerUpOnField || player.HasNukePowerUp())
+                return;
+            break;
+    }
     
     for (int i = 0; i < MAX_POWERUPS; i++) {
         if (!powerUps[i].IsActive()) {
-            powerUps[i].InitWheel(position);
-            wheelPowerUpOnField = true;
+            // Initialize the appropriate power-up
+            switch (type) {
+                case POWERUP_WHEEL:
+                    powerUps[i].InitWheel(position);
+                    wheelPowerUpOnField = true;
+                    break;
+                case POWERUP_SHOTGUN:
+                    powerUps[i].InitShotgun(position);
+                    shotgunPowerUpOnField = true;
+                    break;
+                case POWERUP_COFFEE:
+                    powerUps[i].InitCoffee(position);
+                    coffeePowerUpOnField = true;
+                    break;
+                case POWERUP_NUKE:
+                    powerUps[i].InitNuke(position);
+                    nukePowerUpOnField = true;
+                    break;
+            }
             break;
         }
     }
@@ -459,6 +632,26 @@ void GameManager::CreateDeathAnimation(Vector2 position) {
     }
 }
 
+void GameManager::HandleNukeEffect() {
+    // When nuke is activated, eliminate all enemies
+    for (int i = 0; i < MAX_ENEMIES; i++) {
+        if (enemies[i].IsActive()) {
+            // Store enemy position before deactivating
+            Vector2 enemyPos = enemies[i].GetPosition();
+            
+            // Create death animation for each eliminated enemy
+            CreateDeathAnimation(enemyPos);
+            
+            // Deactivate enemy and increase kill count
+            enemies[i].SetActive(false);
+            enemiesKilled++;
+            
+            // Always spawn a coin (100% chance) for nuke kills
+            SpawnCoin(enemyPos);
+        }
+    }
+}
+
 void GameManager::HandleBulletCollisions() {
     for (int i = 0; i < MAX_BULLETS; i++) {
         if (bullets[i].IsActive()) {
@@ -467,23 +660,38 @@ void GameManager::HandleBulletCollisions() {
                     CheckCollisionRecs(bullets[i].GetCollisionRect(), enemies[j].GetCollisionRect())) {
                     
                     bullets[i].SetActive(false);
-                    enemies[j].SetActive(false);
-                    enemiesKilled++;
                     
-                    // Create death animation
-                    CreateDeathAnimation(enemies[j].GetPosition());
+                    // Apply damage to enemy and check if it dies
+                    bool enemyDied = enemies[j].TakeDamage(1);
                     
-                    // Chance to drop power-up or coin
-                    int dropChance = rand() % 100;
-                    
-                    if (dropChance < 25 && 
-                        !wheelPowerUpOnField && 
-                        !player.HasWheelPowerUp() && 
-                        !player.IsWheelPowerUpActive()) {
-                        SpawnPowerUp(enemies[j].GetPosition());
-                    }
-                    else if (dropChance < 100) {
-                        SpawnCoin(enemies[j].GetPosition());
+                    if (enemyDied) {
+                        // Enemy died, handle death
+                        enemies[j].SetActive(false);
+                        enemiesKilled++;
+                        
+                        // Create death animation
+                        CreateDeathAnimation(enemies[j].GetPosition());
+                        
+                        // Chance to drop power-up or coin
+                        int dropChance = rand() % 100;
+                        
+                        // 5% chance for each power-up type (total 20% for any power-up)
+                        if (dropChance < 5 && !wheelPowerUpOnField && !player.HasWheelPowerUp() && !player.IsWheelPowerUpActive()) {
+                            SpawnSpecificPowerUp(enemies[j].GetPosition(), POWERUP_WHEEL);
+                        }
+                        else if (dropChance < 10 && !shotgunPowerUpOnField && !player.HasShotgunPowerUp() && !player.IsShotgunPowerUpActive()) {
+                            SpawnSpecificPowerUp(enemies[j].GetPosition(), POWERUP_SHOTGUN);
+                        }
+                        else if (dropChance < 15 && !coffeePowerUpOnField && !player.HasCoffeePowerUp() && !player.IsCoffeePowerUpActive()) {
+                            SpawnSpecificPowerUp(enemies[j].GetPosition(), POWERUP_COFFEE);
+                        }
+                        else if (dropChance < 20 && !nukePowerUpOnField && !player.HasNukePowerUp()) {
+                            SpawnSpecificPowerUp(enemies[j].GetPosition(), POWERUP_NUKE);
+                        }
+                        // 60% chance to drop a coin
+                        else if (dropChance < 80) {
+                            SpawnCoin(enemies[j].GetPosition());
+                        }
                     }
                     
                     break;
@@ -582,17 +790,40 @@ void GameManager::DrawPlaying() {
         level.DrawArrow();
     }
     
-    // Draw UI elements
+    // Determine which powerup is active to get correct timer
+    float activeTimer = 0.0f;
+    if (player.IsWheelPowerUpActive()) {
+        activeTimer = player.GetWheelPowerUpTimer();
+    } else if (player.IsShotgunPowerUpActive()) {
+        activeTimer = player.GetShotgunPowerUpTimer();
+    } else if (player.IsCoffeePowerUpActive()) {
+        activeTimer = player.GetCoffeePowerUpTimer();
+    }
+    
+    // Draw UI elements with detailed powerup information
     ui.DrawHUD(
         player.GetLives(),
         coinsCollected,
         enemiesKilled,
         timeRemaining,
+        player.HasWheelPowerUp() || player.HasShotgunPowerUp() || player.HasCoffeePowerUp() || player.HasNukePowerUp(),
+        player.IsWheelPowerUpActive() || player.IsShotgunPowerUpActive() || player.IsCoffeePowerUpActive(),
+        activeTimer,
+        level.GetCurrentLevel(),
         player.HasWheelPowerUp(),
+        player.HasShotgunPowerUp(),
+        player.HasCoffeePowerUp(),
+        player.HasNukePowerUp(),
         player.IsWheelPowerUpActive(),
-        player.GetWheelPowerUpTimer(),  // Pass the actual timer value
-        level.GetCurrentLevel()         // Pass the current level number
+        player.IsShotgunPowerUpActive(),
+        player.IsCoffeePowerUpActive()
     );
+    
+    // If nuke effect is active, draw flash effect
+    if (player.IsNukeActivated()) {
+        float alpha = player.GetNukeEffectTimer() * 2.0f; // Fade from 1.0 to 0.0
+        DrawRectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, Fade(WHITE, alpha));
+    }
 }
 
 bool GameManager::ShouldClose() const {

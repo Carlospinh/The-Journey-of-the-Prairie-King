@@ -24,6 +24,7 @@ private:
     Texture2D coinTexture;
     Texture2D powerUpCartelTexture;
     Texture2D clockTexture;
+    Texture2D levelBallTexture;  // Added level ball texture
     
     // Game state
     GameState currentGameState;
@@ -48,7 +49,10 @@ public:
     void DrawLevelCompleted();
     
     // Draw HUD elements during gameplay
-    void DrawHUD(int playerLives, int coinsCollected, int enemiesKilled, float timeRemaining, bool hasWheelPowerUp, bool wheelPowerUpActive, float wheelPowerUpTimer, int currentLevel);
+    void DrawHUD(int playerLives, int coinsCollected, int enemiesKilled, float timeRemaining, 
+                 bool hasPowerUp, bool powerUpActive, float powerUpTimer, int currentLevel,
+                 bool hasWheelPowerUp = false, bool hasShotgunPowerUp = false, bool hasCoffeePowerUp = false, bool hasNukePowerUp = false,
+                 bool wheelPowerUpActive = false, bool shotgunPowerUpActive = false, bool coffeePowerUpActive = false);
     
     // Get current game state
     GameState GetGameState() const;

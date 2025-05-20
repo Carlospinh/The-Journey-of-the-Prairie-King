@@ -42,9 +42,25 @@ private:
     int enemiesKilled;
     int coinsCollected;
     
-    // PowerUp state
+    // PowerUp state - Wheel
     bool wheelPowerUpOnField;
     float wheelDropCooldown;
+    
+    // PowerUp state - Shotgun
+    bool shotgunPowerUpOnField;
+    float shotgunDropCooldown;
+    
+    // PowerUp state - Coffee
+    bool coffeePowerUpOnField;
+    float coffeeDropCooldown;
+    
+    // PowerUp state - Nuke
+    bool nukePowerUpOnField;
+    float nukeDropCooldown;
+    
+    // PowerUp drop timing
+    float powerUpDropTimer;
+    float powerUpDropInterval;
     
     // Enemy spawning
     float enemySpawnTimer;
@@ -66,10 +82,12 @@ private:
     void SpawnEnemy();
     void SpawnCoin(Vector2 position);
     void SpawnPowerUp(Vector2 position);
+    void SpawnSpecificPowerUp(Vector2 position, PowerUpType type);
     void CreateDeathAnimation(Vector2 position);
     
     bool CheckCollisions();
     void HandleBulletCollisions();
+    void HandleNukeEffect(); // Eliminate all enemies when nuke is activated
     
 public:
     GameManager();

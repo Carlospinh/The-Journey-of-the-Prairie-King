@@ -6,6 +6,7 @@ Player::Player()
     frameTime(0.2f),
     frameCounter(0.0f),
     speed(200.0f),
+    defaultSpeed(200.0f),
     movingLeft(false),
     movingRight(false),
     currentShootDirection(NONE),
@@ -18,12 +19,28 @@ Player::Player()
     lives(3),
     hiTimer(0.0f),
     hiDuration(1.0f),
+    // Wheel power-up
     hasWheelPowerUp(false),
     wheelPowerUpActive(false),
     wheelPowerUpTimer(0.0f),
-    wheelPowerUpDuration(12.0f),
+    wheelPowerUpDuration(12.0f),  // Set to 12 seconds
     wheelShootTimer(0.0f),
-    wheelShootCooldown(0.5f) {
+    wheelShootCooldown(0.5f),
+    // Shotgun power-up
+    hasShotgunPowerUp(false),
+    shotgunPowerUpActive(false),
+    shotgunPowerUpTimer(0.0f),
+    shotgunPowerUpDuration(12.0f),  // Set to 12 seconds
+    // Coffee power-up
+    hasCoffeePowerUp(false),
+    coffeePowerUpActive(false),
+    coffeePowerUpTimer(0.0f),
+    coffeePowerUpDuration(12.0f),  // Set to 12 seconds
+    coffeeSpeedMultiplier(1.6f),
+    // Nuke power-up
+    hasNukePowerUp(false),
+    nukeActivated(false),
+    nukeEffectTimer(0.0f) {
     
     active = true;
 }
@@ -58,12 +75,14 @@ void Player::LoadTextures() {
     gunshotSound = LoadSound("resources/Sounds/Gunshot.wav");
     hitSound = LoadSound("resources/Sounds/Hit.wav");
     pickupPowerUpSound = LoadSound("resources/Sounds/PickUpPowerUp.wav");
+    nukeSound = LoadSound("resources/Sounds/PickUpPowerUp.wav");  // You may want to use a different sound
     
     // Set sound volumes
     SetSoundVolume(footstepSound, 0.5f);
     SetSoundVolume(gunshotSound, 0.7f);
     SetSoundVolume(hitSound, 0.6f);
     SetSoundVolume(pickupPowerUpSound, 0.6f);
+    SetSoundVolume(nukeSound, 0.8f);
 }
 
 void Player::UnloadTextures() {
@@ -76,6 +95,7 @@ void Player::UnloadTextures() {
     UnloadSound(gunshotSound);
     UnloadSound(hitSound);
     UnloadSound(pickupPowerUpSound);
+    UnloadSound(nukeSound);
 }
 
 void Player::Update(float deltaTime) {
@@ -91,8 +111,20 @@ void Player::Update(float deltaTime) {
         currentShootDirection = NONE;
     }
     
-    // Note: We're removing the power-up timer update from here
-    // because it's already handled in UpdateWheelPowerUp
+    // Update shotgun power-up
+    if (shotgunPowerUpActive) {
+        UpdateShotgunPowerUp(deltaTime);
+    }
+    
+    // Update coffee power-up
+    if (coffeePowerUpActive) {
+        UpdateCoffeePowerUp(deltaTime);
+    }
+    
+    // Update nuke effect
+    if (nukeActivated) {
+        UpdateNukeEffect(deltaTime);
+    }
 }
 
 void Player::Draw() {
@@ -166,51 +198,57 @@ void Player::Shoot(Bullet bullets[], int& bulletCount, float deltaTime) {
     bool shouldShoot = false;
     
     if (IsKeyPressed(KEY_UP)) {
-        bulletDir = Vector2 { 0, -1 };
+        bulletDir = Vector2{ 0, -1 };
         shouldShoot = true;
         currentShootDirection = UP;
         shootAnimationTimer = shootAnimationDuration;
     }
     if (IsKeyPressed(KEY_DOWN)) {
-        bulletDir = Vector2 { 0, 1 };
+        bulletDir = Vector2{ 0, 1 };
         shouldShoot = true;
         currentShootDirection = DOWN;
         shootAnimationTimer = shootAnimationDuration;
     }
     if (IsKeyPressed(KEY_LEFT)) {
-        bulletDir = Vector2 { -1, 0 };
+        bulletDir = Vector2{ -1, 0 };
         shouldShoot = true;
         currentShootDirection = LEFT;
         shootAnimationTimer = shootAnimationDuration;
     }
     if (IsKeyPressed(KEY_RIGHT)) {
-        bulletDir = Vector2 { 1, 0 };
+        bulletDir = Vector2{ 1, 0 };
         shouldShoot = true;
         currentShootDirection = RIGHT;
         shootAnimationTimer = shootAnimationDuration;
     }
     
     if (shouldShoot) {
-        Texture2D currentTex = GetCurrentTexture();
-        float pWidth = currentTex.width * scale;
-        float pHeight = currentTex.height * scale;
-        float playerCenterX = position.x + pWidth / 2;
-        float playerCenterY = position.y + pHeight / 2;
-        
-        // Find an inactive bullet
-        for (int i = 0; i < MAX_BULLETS; i++) {
-            if (!bullets[i].IsActive()) {
-                Vector2 bulletPos = {
-                    playerCenterX - bullets[i].GetCollisionRect().width / 2 + bulletDir.x * 20,
-                    playerCenterY - bullets[i].GetCollisionRect().height / 2 + bulletDir.y * 20
-                };
-                
-                bullets[i].Init(bulletPos, bulletDir);
-                bulletCount++;
-                lastBulletTime = GetTime();
-                
-                PlaySound(gunshotSound);
-                break;
+        // If shotgun power-up is active, shoot a shotgun blast
+        if (shotgunPowerUpActive) {
+            ShootShotgun(bullets, bulletCount);
+        } else {
+            // Normal shooting
+            Texture2D currentTex = GetCurrentTexture();
+            float pWidth = currentTex.width * scale;
+            float pHeight = currentTex.height * scale;
+            float playerCenterX = position.x + pWidth / 2;
+            float playerCenterY = position.y + pHeight / 2;
+            
+            // Find an inactive bullet
+            for (int i = 0; i < MAX_BULLETS; i++) {
+                if (!bullets[i].IsActive()) {
+                    Vector2 bulletPos = {
+                        playerCenterX - bullets[i].GetCollisionRect().width / 2 + bulletDir.x * 20,
+                        playerCenterY - bullets[i].GetCollisionRect().height / 2 + bulletDir.y * 20
+                    };
+                    
+                    bullets[i].Init(bulletPos, bulletDir);
+                    bulletCount++;
+                    lastBulletTime = GetTime();
+                    
+                    PlaySound(gunshotSound);
+                    break;
+                }
             }
         }
     }
@@ -241,6 +279,75 @@ void Player::ShootCircle(Bullet bullets[], int& bulletCount) {
         }
     }
     PlaySound(gunshotSound);
+}
+
+// New method to shoot in a shotgun pattern
+void Player::ShootShotgun(Bullet bullets[], int& bulletCount) {
+    if (bulletCount >= MAX_BULLETS - 3) return;
+
+    Texture2D currentTex = GetCurrentTexture();
+    float pWidth = currentTex.width * scale;
+    float pHeight = currentTex.height * scale;
+    float playerCenterX = position.x + pWidth / 2;
+    float playerCenterY = position.y + pHeight / 2;
+    
+    // Base direction based on shoot direction
+    Vector2 baseDir = {0, 0};
+    switch (currentShootDirection) {
+        case UP:    baseDir = Vector2{0, -1}; break;
+        case DOWN:  baseDir = Vector2{0, 1}; break;
+        case LEFT:  baseDir = Vector2{-1, 0}; break;
+        case RIGHT: baseDir = Vector2{1, 0}; break;
+        default:    return;  // No direction, no shot
+    }
+    
+    // Create 3 bullet directions: one straight, two at angles
+    Vector2 directions[3] = {
+        baseDir,  // Center bullet - straight ahead
+        {0, 0},   // Left spread bullet
+        {0, 0}    // Right spread bullet
+    };
+    
+    // Calculate spread directions based on base direction
+    if (baseDir.x == 0) { // Shooting up or down
+        // Add horizontal spread
+        directions[1] = Vector2{ -0.3f, baseDir.y * 0.7f };
+        directions[2] = Vector2{ 0.3f, baseDir.y * 0.7f };
+    } else { // Shooting left or right
+        // Add vertical spread
+        directions[1] = Vector2{ baseDir.x * 0.7f, -0.3f };
+        directions[2] = Vector2{ baseDir.x * 0.7f, 0.3f };
+    }
+
+    // Normalize the spread directions
+    for (int i = 1; i < 3; i++) {
+        float length = sqrtf(directions[i].x * directions[i].x + directions[i].y * directions[i].y);
+        directions[i].x /= length;
+        directions[i].y /= length;
+    }
+    
+    // Shoot all three bullets
+    int bulletsFired = 0;
+    for (int i = 0; i < 3 && bulletsFired < 3; i++) {
+        // Find an inactive bullet
+        for (int j = 0; j < MAX_BULLETS; j++) {
+            if (!bullets[j].IsActive()) {
+                Vector2 bulletPos = {
+                    playerCenterX - bullets[j].GetCollisionRect().width / 2 + directions[i].x * 20,
+                    playerCenterY - bullets[j].GetCollisionRect().height / 2 + directions[i].y * 20
+                };
+                
+                bullets[j].Init(bulletPos, directions[i]);
+                bulletCount++;
+                bulletsFired++;
+                break;
+            }
+        }
+    }
+    
+    // Only play sound once for all three bullets
+    PlaySound(gunshotSound);
+    lastBulletTime = GetTime();
 }
 
 void Player::SetWheelPowerUp(bool has) {
@@ -278,6 +385,119 @@ void Player::UpdateWheelPowerUp(float deltaTime, Bullet bullets[], int& bulletCo
     if (wheelPowerUpTimer <= 0) {
         wheelPowerUpActive = false;
     }
+}
+
+// SHOTGUN POWER-UP METHODS
+void Player::SetShotgunPowerUp(bool has) {
+    hasShotgunPowerUp = has;
+}
+
+bool Player::HasShotgunPowerUp() const {
+    return hasShotgunPowerUp;
+}
+
+bool Player::IsShotgunPowerUpActive() const {
+    return shotgunPowerUpActive;
+}
+
+float Player::GetShotgunPowerUpTimer() const {
+    return shotgunPowerUpTimer;
+}
+
+void Player::ActivateShotgunPowerUp() {
+    if (hasShotgunPowerUp && !shotgunPowerUpActive) {
+        shotgunPowerUpActive = true;
+        shotgunPowerUpTimer = shotgunPowerUpDuration;
+        hasShotgunPowerUp = false;
+    }
+}
+
+void Player::UpdateShotgunPowerUp(float deltaTime) {
+    if (!shotgunPowerUpActive) return;
+    
+    shotgunPowerUpTimer -= deltaTime;
+    
+    if (shotgunPowerUpTimer <= 0) {
+        shotgunPowerUpActive = false;
+    }
+}
+
+// COFFEE POWER-UP METHODS
+void Player::SetCoffeePowerUp(bool has) {
+    hasCoffeePowerUp = has;
+}
+
+bool Player::HasCoffeePowerUp() const {
+    return hasCoffeePowerUp;
+}
+
+bool Player::IsCoffeePowerUpActive() const {
+    return coffeePowerUpActive;
+}
+
+float Player::GetCoffeePowerUpTimer() const {
+    return coffeePowerUpTimer;
+}
+
+void Player::ActivateCoffeePowerUp() {
+    if (hasCoffeePowerUp && !coffeePowerUpActive) {
+        coffeePowerUpActive = true;
+        coffeePowerUpTimer = coffeePowerUpDuration;
+        speed = defaultSpeed * coffeeSpeedMultiplier;
+        hasCoffeePowerUp = false;
+    }
+}
+
+void Player::UpdateCoffeePowerUp(float deltaTime) {
+    if (!coffeePowerUpActive) return;
+    
+    coffeePowerUpTimer -= deltaTime;
+    
+    if (coffeePowerUpTimer <= 0) {
+        coffeePowerUpActive = false;
+        speed = defaultSpeed; // Reset speed back to default
+    }
+}
+
+// NUKE POWER-UP METHODS
+void Player::SetNukePowerUp(bool has) {
+    hasNukePowerUp = has;
+}
+
+bool Player::HasNukePowerUp() const {
+    return hasNukePowerUp;
+}
+
+void Player::ActivateNukePowerUp() {
+    if (hasNukePowerUp && !nukeActivated) {
+        nukeActivated = true;
+        nukeEffectTimer = 0.5f; // Duration of visual effect
+        hasNukePowerUp = false;
+        PlaySound(nukeSound);
+    }
+}
+
+bool Player::IsNukeActivated() const {
+    return nukeActivated;
+}
+
+float Player::GetNukeEffectTimer() const {
+    return nukeEffectTimer;
+}
+
+void Player::UpdateNukeEffect(float deltaTime) {
+    if (!nukeActivated) return;
+    
+    nukeEffectTimer -= deltaTime;
+    
+    if (nukeEffectTimer <= 0) {
+        nukeActivated = false;
+    }
+}
+
+void Player::ResetNukeEffect() {
+    nukeActivated = false;
+    nukeEffectTimer = 0.0f;
 }
 
 void Player::HandleObstacleCollision(Rectangle obstacle) {

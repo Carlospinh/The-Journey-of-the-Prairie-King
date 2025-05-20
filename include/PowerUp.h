@@ -3,12 +3,24 @@
 
 #include "Collectible.h"
 
+// Define power-up types for easier identification
+enum PowerUpType {
+    POWERUP_WHEEL,
+    POWERUP_SHOTGUN,
+    POWERUP_COFFEE,
+    POWERUP_NUKE
+};
+
 class PowerUp : public Collectible {
 private:
+    // Static textures for all power-ups
     static Texture2D wheelTexture;     // Shared wheel texture
+    static Texture2D shotgunTexture;   // Shared shotgun texture
+    static Texture2D coffeeTexture;    // Shared coffee texture
+    static Texture2D nukeTexture;      // Shared nuke texture
     static Sound pickupSound;          // Shared pickup sound
     
-    bool isWheel;                      // PowerUp type flag
+    PowerUpType type;                  // Type of power-up
 
 public:
     PowerUp();
@@ -17,16 +29,28 @@ public:
     // Static methods for shared resources
     static void LoadSharedResources();
     static void UnloadSharedResources();
-    static Texture2D GetWheelTexture();  // Added getter for wheel texture
     
-    // Initialize a power-up at given position
+    // Getters for power-up textures
+    static Texture2D GetWheelTexture();
+    static Texture2D GetShotgunTexture();
+    static Texture2D GetCoffeeTexture();
+    static Texture2D GetNukeTexture();
+    
+    // Initialize power-ups at given position
     void InitWheel(Vector2 position);
+    void InitShotgun(Vector2 position);
+    void InitCoffee(Vector2 position);
+    void InitNuke(Vector2 position);
     
     // Play pickup sound
     static void PlayPickupSound();
     
-    // Check if this is a wheel power-up
+    // Get power-up type
+    PowerUpType GetType() const;
     bool IsWheel() const;
+    bool IsShotgun() const;
+    bool IsCoffee() const;
+    bool IsNuke() const;
 };
 
 #endif // POWERUP_H
