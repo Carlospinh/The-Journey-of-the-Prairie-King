@@ -35,7 +35,7 @@ Player::Player()
     hasCoffeePowerUp(false),
     coffeePowerUpActive(false),
     coffeePowerUpTimer(0.0f),
-    coffeePowerUpDuration(12.0f),  // Set to 12 seconds
+    coffeePowerUpDuration(16.0f),  // Set to 16 seconds
     coffeeSpeedMultiplier(1.6f),
     // Nuke power-up
     hasNukePowerUp(false),
