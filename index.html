@@ -1,53 +1,54 @@
 <!doctype html>
-<html lang="{{ site.lang | default: "en-US" }}">
+<html lang="{{ site.lang | default: 'en-US' }}">
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-
-Presentation members:
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
     <link rel="stylesheet" href="{{ '/assets/css/style.css?v=' | append: site.github.build_revision | relative_url }}">
     <script src="{{ '/assets/js/scale.fix.js' | relative_url }}"></script>
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-    <!--[if lt IE 9]>
-    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
-Carlos Pinheiro Carrión, Marc Pladellorens Pérez & Ismael El Khassal Garnan
+    <title>The Journey of the Prairie King</title>
   </head>
   <body>
     <div class="wrapper">
-      <header>
-        <h1 class="header">The Journey of the Prairie King</h1>
-        <p class="header">"Journey of the Prairie King is a minigame featured in Stardew Valley. Players take on the role of a gunslinger fighting waves of enemies across different levels, using power-ups and upgrades to survive. With retro pixel-art graphics and a Wild West theme, it offers an arcade-style experience within the main game.</p>
-
-        <ul>
-          Contributions:
-          <br> Carlos Pinheiro Carrión: designer working on the sprites, planning the workflow and esthetics of the game.
-          <br> Marc Pladellorens Pérez & Ismael El Khassal Garnan: programmer and sound and level manager. 
-            <li class="download"><a class="buttons" href="{{ site.github.zip_url }}">Download ZIP</a></li>
-            <li class="download"><a class="buttons" href="{{ site.github.tar_url }}">Download TAR</a></li>
-          {% endif %}
-          <li><a class="buttons github" href="{{ site.github.repository_url }}">View On GitHub</a></li>
-        </ul>
-
-        {% if site.github.is_project_page %}
-          <p class="header">This project is maintained by <a class="Carlos Pinheiro Carrión" href="{{ carlospinh.gthub.io }}">{{ site.github.owner_name }}</a></p>
-        {% endif %}
-
-        {% if site.github.is_user_page %}
-          <ul>
-            <li><a class="buttons github" href="{{ site.github.owner_url }}">GitHub Profile</a></li>
-          </ul>
-        {% endif %}
+      <header class="container py-5 text-center">
+        <h1 class="display-4">The Journey of the Prairie King</h1>
+        <p class="lead">Journey of the Prairie King is a minigame featured in Stardew Valley. Players take on the role of a gunslinger fighting waves of enemies across different levels, using power-ups and upgrades to survive. With retro pixel-art graphics and a Wild West theme, it offers an arcade-style experience within the main game.</p>
+        <div class="row justify-content-center">
+          <div class="col-md-4">
+            <h4>Contributions:</h4>
+            <br>
+            <ul>
+              <h5>Carlos Pinheiro Carrión</h5>
+              <p>Designer working on the sprites, planning the workflow and aesthetics of the game.</p>
+              <h5>Marc Pladellorens Pérez</h5>
+              <p>Programmer and sound and level manager.</p>
+              <h5>Ismael El Khassal Garnan</h5>
+              <p>Programmer and sound and level manager.</p>
+            </ul>
+          </div>
+        
+          <div class="col-md-4">
+            <h4>Links:</h4>
+            <br>
+            <ul>
+              <p class="btn btn-primary" href="{{ site.github.zip_url }}">Video Gameplay</p>
+              <br>
+              <p class="btn btn-secondary" href="{{ site.github.tar_url }}">Last release version</p>
+            </ul>
+          </div>
+        </div>
       </header>
 
-      <section>
-        {{ content }}
-      </section>
-
-      <footer>
+      <footer class="container py-4 text-center">
+        <div class="col-md-4 mx-auto">
+          <h4>Project Maintainers:</h4>
+          <p>This project is maintained by <a href="{{ carlospinh.gthub.io }}">Carlos Pinheiro Carrión </a>| Marc Pladellorens Pérez | Ismael El Khassal Garnan</p>
+        </div>
         <p><small>Hosted on <a href="https://pages.github.com">GitHub Pages</a> using the Dinky theme</small></p>
       </footer>
     </div>
-    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
   </body>
 </html>
