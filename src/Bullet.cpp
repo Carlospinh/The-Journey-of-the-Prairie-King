@@ -47,5 +47,5 @@ Vector2 Bullet::GetDirection() const {
 Rectangle Bullet::GetCollisionRect() const {
     float width = sharedTexture.width * scale;
     float height = sharedTexture.height * scale;
-    return Rectangle{ position.x, position.y, width, height };
+    return { position.x, position.y, width, height };
 }

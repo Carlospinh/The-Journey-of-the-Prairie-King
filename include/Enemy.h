@@ -21,6 +21,11 @@ private:
     int health;               // Health points: Orc = 1, Ogre = 2, Mummy = 4
     float hitFlashTime;       // Time to show hit flash effect
     
+    // Beaver chasing functionality
+    bool chasingBeaver;       // Whether this enemy is chasing a beaver
+    Vector2 beaverTarget;     // Position of the beaver being chased
+    float beaverChaseRange;   // Range within which enemy will chase beaver
+    
     // Static textures for all enemy types
     static Texture2D orcFrames[2];     // Shared textures for orc enemies
     static Texture2D ogreFrames[2];    // Shared textures for ogre enemies
@@ -48,6 +53,12 @@ public:
     
     // Move enemy toward target position
     void MoveToward(Vector2 targetPos, float deltaTime);
+    
+    // New beaver-related methods
+    void SetBeaverTarget(Vector2 beaverPos);
+    void ClearBeaverTarget();
+    bool IsChasingBeaver() const;
+    float GetDistanceToBeaver() const;
     
     // Check if enemy is outside level boundaries
     bool IsOutOfBounds(float bgX, float bgY, float bgWidth, float bgHeight) const;

@@ -13,7 +13,7 @@ void Collectible::SetTexture(Texture2D texture) {
 Rectangle Collectible::GetCollisionRect() const {
     float width = texture.width * scale;
     float height = texture.height * scale;
-    return Rectangle{ position.x, position.y, width, height };
+    return { position.x, position.y, width, height };
 }
 
 void Collectible::Draw() {

@@ -14,7 +14,10 @@ Enemy::Enemy()
     speed(100.0f),
     type(ENEMY_ORC),
     health(1),
-    hitFlashTime(0.0f) {
+    hitFlashTime(0.0f),
+    chasingBeaver(false),
+    beaverTarget({0, 0}),
+    beaverChaseRange(400.0f) { // Increased from 200.0f to 400.0f
 }
 
 Enemy::~Enemy() {
@@ -146,7 +149,7 @@ void Enemy::Draw() {
 Rectangle Enemy::GetCollisionRect() const {
     float width = frames[0].width * scale;
     float height = frames[0].height * scale;
-    return Rectangle{ position.x, position.y, width, height };
+    return { position.x, position.y, width, height };
 }
 
 void Enemy::MoveToward(Vector2 targetPos, float deltaTime) {
@@ -167,9 +170,12 @@ void Enemy::MoveToward(Vector2 targetPos, float deltaTime) {
             break;
     }
     
+    // Prioritize beaver target if chasing one
+    Vector2 actualTarget = chasingBeaver ? beaverTarget : targetPos;
+    
     Vector2 direction = {
-        targetPos.x - position.x,
-        targetPos.y - position.y
+        actualTarget.x - position.x,
+        actualTarget.y - position.y
     };
     
     float length = sqrtf(direction.x * direction.x + direction.y * direction.y);
@@ -181,7 +187,7 @@ void Enemy::MoveToward(Vector2 targetPos, float deltaTime) {
     // Apply movement based on enemy type
     switch (type) {
         case ENEMY_ORC:
-            // Direct movement toward player
+            // Direct movement toward target (player or beaver)
             position.x += direction.x * speed * deltaTime;
             position.y += direction.y * speed * deltaTime;
             break;
@@ -195,7 +201,7 @@ void Enemy::MoveToward(Vector2 targetPos, float deltaTime) {
         case ENEMY_MUMMY:
             // More precise movement with occasional sidesteps
             if (GetRandomValue(0, 60) == 0) {
-                // Sidestep perpendicular to player direction
+                // Sidestep perpendicular to target direction
                 position.x += direction.y * speed * 0.5f * deltaTime;
                 position.y -= direction.x * speed * 0.5f * deltaTime;
             } else {
@@ -263,4 +269,31 @@ bool Enemy::TakeDamage(int damage) {
 
 int Enemy::GetHealth() const {
     return health;
+}
+
+void Enemy::SetBeaverTarget(Vector2 beaverPos) {
+    // Check if beaver is within chase range
+    float distance = sqrtf((beaverPos.x - position.x) * (beaverPos.x - position.x) + 
+                          (beaverPos.y - position.y) * (beaverPos.y - position.y));
+    
+    if (distance <= beaverChaseRange) {
+        chasingBeaver = true;
+        beaverTarget = beaverPos;
+    }
+}
+
+void Enemy::ClearBeaverTarget() {
+    chasingBeaver = false;
+    beaverTarget = {0, 0};
+}
+
+bool Enemy::IsChasingBeaver() const {
+    return chasingBeaver;
+}
+
+float Enemy::GetDistanceToBeaver() const {
+    if (!chasingBeaver) return -1.0f;
+    
+    return sqrtf((beaverTarget.x - position.x) * (beaverTarget.x - position.x) + 
+                (beaverTarget.y - position.y) * (beaverTarget.y - position.y));
 }

@@ -35,12 +35,19 @@ Player::Player()
     hasCoffeePowerUp(false),
     coffeePowerUpActive(false),
     coffeePowerUpTimer(0.0f),
-    coffeePowerUpDuration(16.0f),  // Set to 16 seconds
+    coffeePowerUpDuration(12.0f),  // Set to 12 seconds
     coffeeSpeedMultiplier(1.6f),
     // Nuke power-up
     hasNukePowerUp(false),
     nukeActivated(false),
-    nukeEffectTimer(0.0f) {
+    nukeEffectTimer(0.0f),
+    // Shop upgrades
+    gunUpgradeLevel(0),
+    bootUpgradeLevel(0),
+    boxUpgradeLevel(0),
+    baseBulletCooldown(0.2f),
+    baseSpeed(200.0f),
+    baseMaxLives(3) {
     
     active = true;
 }
@@ -198,25 +205,25 @@ void Player::Shoot(Bullet bullets[], int& bulletCount, float deltaTime) {
     bool shouldShoot = false;
     
     if (IsKeyPressed(KEY_UP)) {
-        bulletDir = Vector2{ 0, -1 };
+        bulletDir ={ 0, -1 };
         shouldShoot = true;
         currentShootDirection = UP;
         shootAnimationTimer = shootAnimationDuration;
     }
     if (IsKeyPressed(KEY_DOWN)) {
-        bulletDir = Vector2{ 0, 1 };
+        bulletDir ={ 0, 1 };
         shouldShoot = true;
         currentShootDirection = DOWN;
         shootAnimationTimer = shootAnimationDuration;
     }
     if (IsKeyPressed(KEY_LEFT)) {
-        bulletDir = Vector2{ -1, 0 };
+        bulletDir ={ -1, 0 };
         shouldShoot = true;
         currentShootDirection = LEFT;
         shootAnimationTimer = shootAnimationDuration;
     }
     if (IsKeyPressed(KEY_RIGHT)) {
-        bulletDir = Vector2{ 1, 0 };
+        bulletDir ={ 1, 0 };
         shouldShoot = true;
         currentShootDirection = RIGHT;
         shootAnimationTimer = shootAnimationDuration;
@@ -294,10 +301,10 @@ void Player::ShootShotgun(Bullet bullets[], int& bulletCount) {
     // Base direction based on shoot direction
     Vector2 baseDir = {0, 0};
     switch (currentShootDirection) {
-        case UP:    baseDir = Vector2{0, -1}; break;
-        case DOWN:  baseDir = Vector2{0, 1}; break;
-        case LEFT:  baseDir = Vector2{-1, 0}; break;
-        case RIGHT: baseDir = Vector2{1, 0}; break;
+        case UP:    baseDir ={0, -1}; break;
+        case DOWN:  baseDir ={0, 1}; break;
+        case LEFT:  baseDir ={-1, 0}; break;
+        case RIGHT: baseDir ={1, 0}; break;
         default:    return;  // No direction, no shot
     }
     
@@ -311,12 +318,12 @@ void Player::ShootShotgun(Bullet bullets[], int& bulletCount) {
     // Calculate spread directions based on base direction
     if (baseDir.x == 0) { // Shooting up or down
         // Add horizontal spread
-        directions[1] = Vector2{ -0.3f, baseDir.y * 0.7f };
-        directions[2] = Vector2{ 0.3f, baseDir.y * 0.7f };
+        directions[1] ={ -0.3f, baseDir.y * 0.7f };
+        directions[2] ={ 0.3f, baseDir.y * 0.7f };
     } else { // Shooting left or right
         // Add vertical spread
-        directions[1] = Vector2{ baseDir.x * 0.7f, -0.3f };
-        directions[2] = Vector2{ baseDir.x * 0.7f, 0.3f };
+        directions[1] ={ baseDir.x * 0.7f, -0.3f };
+        directions[2] ={ baseDir.x * 0.7f, 0.3f };
     }
 
     // Normalize the spread directions
@@ -385,6 +392,10 @@ void Player::UpdateWheelPowerUp(float deltaTime, Bullet bullets[], int& bulletCo
     if (wheelPowerUpTimer <= 0) {
         wheelPowerUpActive = false;
     }
+}
+
+float Player::GetWheelPowerUpTimer() const {
+    return wheelPowerUpTimer;
 }
 
 // SHOTGUN POWER-UP METHODS
@@ -576,7 +587,7 @@ Rectangle Player::GetCollisionRect() const {
     Texture2D currentTex = GetCurrentTexture();
     float width = currentTex.width * scale;
     float height = currentTex.height * scale;
-    return Rectangle{ position.x, position.y, width, height };
+    return { position.x, position.y, width, height };
 }
 
 void Player::PlayHiAnimation() {
@@ -587,6 +598,47 @@ bool Player::IsHiAnimationPlaying() const {
     return hiTimer > 0;
 }
 
-float Player::GetWheelPowerUpTimer() const {
-    return wheelPowerUpTimer;
+// SHOP UPGRADE METHODS
+void Player::UpgradeGun() {
+    if (gunUpgradeLevel < 3) {
+        gunUpgradeLevel++;
+        // Reduce bullet cooldown for faster shooting
+        float reduction = 0.03f * gunUpgradeLevel; // 3% reduction per level
+        bulletCooldown = baseBulletCooldown - reduction;
+        if (bulletCooldown < 0.05f) bulletCooldown = 0.05f; // Minimum cooldown
+    }
+}
+
+void Player::UpgradeBoot() {
+    if (bootUpgradeLevel < 2) {
+        bootUpgradeLevel++;
+        // Increase movement speed
+        float speedIncrease = 80.0f * bootUpgradeLevel; // 50 units per level
+        speed = baseSpeed + speedIncrease;
+        defaultSpeed = speed; // Update default speed too
+    }
+}
+
+void Player::UpgradeBox() {
+    if (boxUpgradeLevel < 3) {
+        boxUpgradeLevel++;
+        // Increase max lives
+        int lifeIncrease = boxUpgradeLevel; // 1 life per level
+        lives += lifeIncrease;
+        // Update base max lives for future reference
+        baseMaxLives = 3 + boxUpgradeLevel;
+    }
+}
+
+// Getter methods for shop upgrade levels
+int Player::GetGunUpgradeLevel() const {
+    return gunUpgradeLevel;
+}
+
+int Player::getBootUpgradeLevel() const {
+    return bootUpgradeLevel;
+}
+
+int Player::GetBoxUpgradeLevel() const {
+    return boxUpgradeLevel;
 }

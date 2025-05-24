@@ -52,6 +52,14 @@ private:
     bool hasNukePowerUp;                // Has nuke power-up
     bool nukeActivated;                 // Whether nuke has been activated
     float nukeEffectTimer;              // Timer for nuke visual effect
+    
+    // Permanent shop upgrades
+    int gunUpgradeLevel;                // Gun upgrade level (0-3)
+    int bootUpgradeLevel;               // Boot upgrade level (0-3)
+    int boxUpgradeLevel;                // Box upgrade level (0-3)
+    float baseBulletCooldown;           // Base bullet cooldown before upgrades
+    float baseSpeed;                    // Base speed before upgrades
+    int baseMaxLives;                   // Base max lives before upgrades
 
     // Sounds
     Sound footstepSound;
@@ -114,6 +122,15 @@ public:
     float GetNukeEffectTimer() const;
     void UpdateNukeEffect(float deltaTime);
     void ResetNukeEffect();
+
+    // Shop upgrade methods
+    void UpgradeGun();                  // Upgrade gun (reduces bullet cooldown)
+    void UpgradeBoot();                 // Upgrade boot (increases speed)
+    void UpgradeBox();                  // Upgrade box (increases max lives)
+    int GetGunUpgradeLevel() const;
+    int getBootUpgradeLevel() const;
+    int GetBoxUpgradeLevel() const;
+    void ApplyShopUpgrades();           // Apply all current upgrades to stats
 
     // Collision methods
     void HandleObstacleCollision(Rectangle obstacle);

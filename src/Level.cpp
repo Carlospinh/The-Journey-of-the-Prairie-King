@@ -13,7 +13,7 @@ Level::Level()
     transitionDuration(1.5f),
     showBackgroundDuringTransition(true),
     transitionPause(0.0f),
-    pauseDuration(1.5f),
+    pauseDuration(1.0f),
     pauseComplete(false),
     arrowBlinkTimer(0.0f),
     arrowBlinkInterval(0.5f),
@@ -105,10 +105,10 @@ void Level::LoadResources(int levelNumber) {
     float bgX = (SCREEN_WIDTH - bgWidth) / 2;
     float bgY = (SCREEN_HEIGHT - bgHeight) / 2;
     
-    levelBounds = Rectangle{ bgX, bgY, bgWidth, bgHeight };
+    levelBounds = { bgX, bgY, bgWidth, bgHeight };
     
     // Set up exit zone at bottom of level
-    exitZone = Rectangle{
+    exitZone = {
         bgX + bgWidth * 0.4f,
         bgY + bgHeight - 50,
         bgWidth * 0.2f,
@@ -122,20 +122,20 @@ void Level::LoadResources(int levelNumber) {
     
     // These obstacles are for the outer boundaries and the bushes
     // Moved inward to appear directly on the bushes
-    obstacles[1] = Rectangle{ bgX + offset, bgY + bgHeight - thickness, 320, thickness };
-    obstacles[2] = Rectangle{ bgX + offset, bgY + offset, thickness, 370 };
-    obstacles[3] = Rectangle{ bgX + bgWidth - thickness - offset, bgY + offset, thickness, 370 };
-    obstacles[4] = Rectangle{ bgX + offset, bgY + offset, thickness, thickness };
-    obstacles[5] = Rectangle{ bgX + bgWidth - thickness - offset, bgY + offset, thickness, thickness };
-    obstacles[6] = Rectangle{ bgX + offset, bgY + bgHeight - thickness, thickness, thickness };
-    obstacles[7] = Rectangle{ bgX + bgWidth - thickness - offset, bgY + bgHeight - thickness, thickness, thickness };
-    obstacles[8] = Rectangle{ bgX + offset, bgY + bgHeight - thickness, bgHeight, thickness };
+    obstacles[1] = { bgX + offset, bgY + bgHeight - thickness, 320, thickness };
+    obstacles[2] = { bgX + offset, bgY + offset, thickness, 370 };
+    obstacles[3] = { bgX + bgWidth - thickness - offset, bgY + offset, thickness, 370 };
+    obstacles[4] = { bgX + offset, bgY + offset, thickness, thickness };
+    obstacles[5] = { bgX + bgWidth - thickness - offset, bgY + offset, thickness, thickness };
+    obstacles[6] = { bgX + offset, bgY + bgHeight - thickness, thickness, thickness };
+    obstacles[7] = { bgX + bgWidth - thickness - offset, bgY + bgHeight - thickness, thickness, thickness };
+    obstacles[8] = { bgX + offset, bgY + bgHeight - thickness, bgHeight, thickness };
     
     float halfWidth = (bgWidth - gapWidth) / 2;
     
     // Top barriers with gap in the middle (for the entry point) - moved inward
-    obstacles[0] = Rectangle{ bgX + offset, bgY + offset, halfWidth, thickness };
-    obstacles[8] = Rectangle{ bgX + offset + halfWidth + gapWidth, bgY + offset, halfWidth, thickness };
+    obstacles[0] = { bgX + offset, bgY + offset, halfWidth, thickness };
+    obstacles[8] = { bgX + offset + halfWidth + gapWidth, bgY + offset, halfWidth, thickness };
     
     // Add level 2 specific inner walls at the specified tile coordinates
     // The coordinates are in a 16x16 grid, so we need to convert them to screen coordinates
@@ -144,13 +144,13 @@ void Level::LoadResources(int levelNumber) {
         float tileHeight = bgHeight / 16.0f;
     
         // Top-left L-shape
-        obstacles[9] = Rectangle{
+        obstacles[9] = {
             bgX + 4 * tileWidth,
             bgY + 4 * tileHeight,
             2 * tileWidth,
             tileHeight
         };
-        obstacles[10] = Rectangle{
+        obstacles[10] = {
             bgX + 4 * tileWidth,
             bgY + 4 * tileHeight,
             tileWidth,
@@ -158,13 +158,13 @@ void Level::LoadResources(int levelNumber) {
         };
     
         // Top-right L-shape (moved one column right)
-        obstacles[11] = Rectangle{
+        obstacles[11] = {
             bgX + 11 * tileWidth, // 9 -> 10
             bgY + 4 * tileHeight,
             2 * tileWidth,
             tileHeight
         };
-        obstacles[12] = Rectangle{
+        obstacles[12] = {
             bgX + 12 * tileWidth, // 11 -> 12
             bgY + 4 * tileHeight,
             tileWidth,
@@ -172,13 +172,13 @@ void Level::LoadResources(int levelNumber) {
         };
     
         // Bottom-left L-shape (already moved down one row)
-        obstacles[13] = Rectangle{
+        obstacles[13] = {
             bgX + 4 * tileWidth,
             bgY + 11 * tileHeight,
             tileWidth,
             2 * tileHeight
         };
-        obstacles[14] = Rectangle{
+        obstacles[14] = {
             bgX + 4 * tileWidth,
             bgY + 12 * tileHeight,
             2 * tileWidth,
@@ -186,13 +186,13 @@ void Level::LoadResources(int levelNumber) {
         };
     
         // Bottom-right L-shape (moved one column right + already moved down one row)
-        obstacles[15] = Rectangle{
+        obstacles[15] = {
             bgX + 12 * tileWidth, // 11 -> 12
             bgY + 11 * tileHeight,
             tileWidth,
             2* tileHeight
         };
-        obstacles[16] = Rectangle{
+        obstacles[16] = {
             bgX + 11 * tileWidth, // 9 -> 10
             bgY + 12 * tileHeight,
             2 * tileWidth,
@@ -337,7 +337,7 @@ void Level::Draw() {
             transitionY = levelBounds.y + levelBounds.height - (levelBounds.height * easedProgress);
             
             DrawTexturePro(backgrounds[currentBackground], sourceRec, 
-                Rectangle{ levelBounds.x, transitionY - levelBounds.height, levelBounds.width, levelBounds.height }, 
+                { levelBounds.x, transitionY - levelBounds.height, levelBounds.width, levelBounds.height }, 
                 origin, 0.0f, WHITE);
         }
         
@@ -395,7 +395,7 @@ Rectangle Level::GetObstacle(int index) const {
     if (index >= 0 && index <= maxIndex) {
         return obstacles[index];
     }
-    return Rectangle{ 0, 0, 0, 0 };
+    return { 0, 0, 0, 0 };
 }
 
 int Level::GetObstacleCount() const {

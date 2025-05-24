@@ -10,7 +10,8 @@
 #include "DeathAnimation.h"
 #include "Level.h"
 #include "UI.h"
-
+#include "Shop.h"
+#include "Beaver.h"
 // Maximum number of game objects
 #define MAX_ENEMIES 20
 #define MAX_BULLETS 100
@@ -37,6 +38,7 @@ private:
     DeathAnimation deathAnimations[MAX_DEATH_ANIMATIONS];
     Level level;
     UI ui;
+    Shop shop; // Added Shop object
     
     // Game statistics
     int enemiesKilled;
@@ -66,10 +68,22 @@ private:
     float enemySpawnTimer;
     float enemySpawnInterval;
     
+    // Shop state
+    bool shopActivated;
+    bool shopCompletedThisLevel;
+    
     // Audio
     Sound startSound;
     Music backgroundMusic;
-    
+    static const int MAX_BEAVERS = 3;
+Beaver beavers[MAX_BEAVERS];
+float beaverSpawnTimer;
+float beaverSpawnInterval;
+
+// Add these method declarations in the private section:
+void UpdateBeavers(float deltaTime);
+void SpawnBeaver();
+std::vector<Vector2> GenerateBeaverPath() const;
     // Helper methods
     void UpdatePlaying(float deltaTime);
     void UpdateGameOver(float deltaTime);
@@ -88,6 +102,7 @@ private:
     bool CheckCollisions();
     void HandleBulletCollisions();
     void HandleNukeEffect(); // Eliminate all enemies when nuke is activated
+    void UpdateEnemyBeaverDistraction(); // Make enemies chase beavers when active
     
 public:
     GameManager();

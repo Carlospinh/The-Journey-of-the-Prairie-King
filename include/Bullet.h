@@ -2,7 +2,7 @@
 #define BULLET_H
 
 #include "Entity.h"
-
+#include "Common.h"
 class Bullet : public Entity {
 private:
     Vector2 direction;   // Direction of bullet movement

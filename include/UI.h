@@ -26,6 +26,11 @@ private:
     Texture2D clockTexture;
     Texture2D levelBallTexture;  // Added level ball texture
     
+    // Shop item textures for UI display
+    Texture2D shopGunTextures[3];
+    Texture2D shopBootTextures[2];
+    Texture2D shopBoxTextures[3];
+    
     // Game state
     GameState currentGameState;
     
@@ -52,7 +57,11 @@ public:
     void DrawHUD(int playerLives, int coinsCollected, int enemiesKilled, float timeRemaining, 
                  bool hasPowerUp, bool powerUpActive, float powerUpTimer, int currentLevel,
                  bool hasWheelPowerUp = false, bool hasShotgunPowerUp = false, bool hasCoffeePowerUp = false, bool hasNukePowerUp = false,
-                 bool wheelPowerUpActive = false, bool shotgunPowerUpActive = false, bool coffeePowerUpActive = false);
+                 bool wheelPowerUpActive = false, bool shotgunPowerUpActive = false, bool coffeePowerUpActive = false,
+                 int gunUpgradeLevel = 0, int bootUpgradeLevel = 0, int boxUpgradeLevel = 0);
+    
+    // Draw purchased shop items in bottom-left corner
+    void DrawShopItems(int gunUpgradeLevel, int bootUpgradeLevel, int boxUpgradeLevel);
     
     // Get current game state
     GameState GetGameState() const;

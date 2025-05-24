@@ -31,18 +31,6 @@ void UI::LoadResources() {
     powerUpCartelTexture = LoadTexture("resources/UI/PowerUpCartel.png");
     clockTexture = LoadTexture("resources/UI/Clock.png");
     levelBallTexture = LoadTexture("resources/levelball/Level_Ball.png");
-    
-    // Load shop item textures for UI display
-    shopGunTextures[0] = LoadTexture("resources/Store/Gun/Store_Gun_1.png");
-    shopGunTextures[1] = LoadTexture("resources/Store/Gun/Store_Gun_2.png");
-    shopGunTextures[2] = LoadTexture("resources/Store/Gun/Store_Gun_3.png");
-    
-    shopBootTextures[0] = LoadTexture("resources/Store/Bota/Store_Bota_1.png");
-    shopBootTextures[1] = LoadTexture("resources/Store/Bota/Store_Bota_2.png");
-    
-    shopBoxTextures[0] = LoadTexture("resources/Store/Box/Store_Box_1.png");
-    shopBoxTextures[1] = LoadTexture("resources/Store/Box/Store_Box_2.png");
-    shopBoxTextures[2] = LoadTexture("resources/Store/Box/Store_Box_3.png");
 }
 
 void UI::UnloadResources() {
@@ -60,15 +48,6 @@ void UI::UnloadResources() {
     UnloadTexture(powerUpCartelTexture);
     UnloadTexture(clockTexture);
     UnloadTexture(levelBallTexture);  // Added this line to unload level ball texture
-    
-    // Unload shop item textures
-    for (int i = 0; i < 3; i++) {
-        UnloadTexture(shopGunTextures[i]);
-        UnloadTexture(shopBoxTextures[i]);
-    }
-    for (int i = 0; i < 2; i++) {
-        UnloadTexture(shopBootTextures[i]);
-    }
 }
 
 void UI::Update(float deltaTime) {
@@ -131,7 +110,7 @@ void UI::DrawIntroScreen1() {
     float imageWidth = introScreen1.width * imageScale;
     float imageHeight = introScreen1.height * imageScale;
     DrawTextureEx(introScreen1,
-        {
+        (Vector2) {
         (SCREEN_WIDTH - imageWidth) / 2 + 20, SCREEN_HEIGHT / 2 - 200
     },
         0.0f, imageScale, Fade(WHITE, fadeAlpha));
@@ -146,7 +125,7 @@ void UI::DrawIntroScreen2() {
     float imageWidth = introScreen2.width * imageScale;
     float imageHeight = introScreen2.height * imageScale;
     DrawTextureEx(introScreen2,
-        {
+        (Vector2) {
         (SCREEN_WIDTH - imageWidth) / 2, SCREEN_HEIGHT / 2 - 300
     },
         0.0f, imageScale, Fade(WHITE, fadeAlpha));
@@ -166,7 +145,7 @@ void UI::DrawIntroScreen3() {
     float imageWidth = introScreen3.width * imageScale;
     float imageHeight = introScreen3.height * imageScale;
     DrawTextureEx(introScreen3,
-        {
+        (Vector2) {
         (SCREEN_WIDTH - imageWidth) / 2, SCREEN_HEIGHT / 2 - 200
     },
         0.0f, imageScale, Fade(WHITE, fadeAlpha));
@@ -189,7 +168,7 @@ void UI::DrawGameOver() {
         (SCREEN_WIDTH - gameOverSize.x) / 2 + 5,
         SCREEN_HEIGHT / 2 - 100 + 5,
         gameOverFontSize,
-        {
+        (Color) {
         50, 50, 50, 255
     });
 
@@ -223,7 +202,7 @@ void UI::DrawLevelCompleted() {
         (SCREEN_WIDTH - winSize.x) / 2 + 5,
         SCREEN_HEIGHT / 2 - 100 + 5,
         winFontSize,
-        {
+        (Color) {
         50, 50, 0, 255
     });
 
@@ -264,7 +243,7 @@ void UI::DrawHUD(int playerLives, int coinsCollected, int enemiesKilled, float t
     float progressBarX = clockX + clockWidth + spacing;
     float progressBarY = 20.0f;
     
-    DrawTextureEx(clockTexture, { clockX, clockY }, 0.0f, clockScale, WHITE);
+    DrawTextureEx(clockTexture, (Vector2) { clockX, clockY }, 0.0f, clockScale, WHITE);
     
     float remainingWidth = (timeRemaining / 60.0f) * progressBarWidth;
     DrawRectangle(progressBarX, progressBarY, progressBarWidth, progressBarHeight, BLACK);
@@ -408,33 +387,46 @@ bool UI::IsMouseOverStart() const {
 }
 
 void UI::DrawShopItems(int gunUpgradeLevel, int bootUpgradeLevel, int boxUpgradeLevel) {
-    float shopItemScale = 0.15f; // Scale factor for shop item textures
-    float verticalSpacing = 5.0f; // Space between vertically stacked items
+    // Position 50px to the right from left edge, stack vertically
+    float startX = 70.0f;  // 50px offset to the right
+    float startY = SCREEN_HEIGHT - 150.0f;  // Start higher to accommodate vertical stacking
+    float iconSize = 32.0f;
+    float verticalSpacing = 40.0f;  // Vertical spacing between items
     
-    // Start from the bottom and calculate positions for stacking upward
-    Vector2 basePosition = {400, GetScreenHeight() - 40}; // Bottom position
-    Vector2 currentPosition = basePosition;
+    // Calculate panel dimensions based on items present
+    int itemCount = 0;
+    if (gunUpgradeLevel > 0) itemCount++;
+    if (bootUpgradeLevel > 0) itemCount++;
+    if (boxUpgradeLevel > 0) itemCount++;
     
-    // Draw box upgrade if purchased (bottom item)
-    if (boxUpgradeLevel > 0) {
-        float boxHeight = shopBoxTextures[boxUpgradeLevel - 1].height * shopItemScale;
-        currentPosition.y -= boxHeight;
-        DrawTextureEx(shopBoxTextures[boxUpgradeLevel - 1], currentPosition, 0.0f, shopItemScale, WHITE);
-        currentPosition.y -= verticalSpacing;
-    }
-    
-    // Draw boot upgrade if purchased (middle item)
-    if (bootUpgradeLevel > 0) {
-        float bootHeight = shopBootTextures[bootUpgradeLevel - 1].height * shopItemScale;
-        currentPosition.y -= bootHeight;
-        DrawTextureEx(shopBootTextures[bootUpgradeLevel - 1], currentPosition, 0.0f, shopItemScale, WHITE);
-        currentPosition.y -= verticalSpacing;
-    }
-    
-    // Draw gun upgrade if purchased (top item)
-    if (gunUpgradeLevel > 0) {
-        float gunHeight = shopGunTextures[gunUpgradeLevel - 1].height * shopItemScale;
-        currentPosition.y -= gunHeight;
-        DrawTextureEx(shopGunTextures[gunUpgradeLevel - 1], currentPosition, 0.0f, shopItemScale, WHITE);
+    if (itemCount > 0) {
+        float panelWidth = 50.0f;
+        float panelHeight = (iconSize + verticalSpacing) * itemCount - verticalSpacing + 20.0f;
+        
+        // Draw background panel for shop items
+        DrawRectangle(startX - 10, startY - 10, panelWidth, panelHeight, (Color){0, 0, 0, 120});
+        DrawRectangleLines(startX - 10, startY - 10, panelWidth, panelHeight, GRAY);
+        
+        float currentY = startY;
+        
+        // Draw gun upgrade icon if purchased (stacked vertically)
+        if (gunUpgradeLevel > 0) {
+            DrawRectangle(startX, currentY, iconSize, iconSize, RED);
+            DrawText(TextFormat("%d", gunUpgradeLevel), startX + iconSize/2 - 5, currentY + iconSize + 5, 12, WHITE);
+            currentY += verticalSpacing;
+        }
+        
+        // Draw boot upgrade icon if purchased (stacked vertically)
+        if (bootUpgradeLevel > 0) {
+            DrawRectangle(startX, currentY, iconSize, iconSize, BLUE);
+            DrawText(TextFormat("%d", bootUpgradeLevel), startX + iconSize/2 - 5, currentY + iconSize + 5, 12, WHITE);
+            currentY += verticalSpacing;
+        }
+        
+        // Draw box upgrade icon if purchased (stacked vertically)
+        if (boxUpgradeLevel > 0) {
+            DrawRectangle(startX, currentY, iconSize, iconSize, GREEN);
+            DrawText(TextFormat("%d", boxUpgradeLevel), startX + iconSize/2 - 5, currentY + iconSize + 5, 12, WHITE);
+        }
     }
 }

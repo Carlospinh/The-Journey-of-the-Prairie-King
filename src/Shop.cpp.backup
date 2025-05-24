@@ -1,0 +1,143 @@
+#include "../include/Shop.h"
+#include <iostream>
+
+#define SCREEN_WIDTH 1920
+#define SCREEN_HEIGHT 1080
+
+Shop::Shop() {
+    isActive = false;
+    isInteractable = false;
+    position = {SCREEN_WIDTH / 2, -100}; // Start above the screen
+    targetPosition = {SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 150}; // Middle of the screen
+    moveSpeed = 150.0f;
+    
+    currentFrame = 0;
+    frameTime = 0.2f;
+    frameCounter = 0.0f;
+    
+    showInteractPrompt = false;
+    showBackground = false;
+}
+
+Shop::~Shop() {
+    UnloadResources();
+}
+
+void Shop::LoadResources() {
+    // Load the NPC sprites
+    npcSprites[0] = LoadTexture("resources/Store/NPC/StoreNPC_Static_Left.png");
+    npcSprites[1] = LoadTexture("resources/Store/NPC/StoreNPC_Static.png");
+    npcSprites[2] = LoadTexture("resources/Store/NPC/StoreNPC_Static_Right.png");
+    npcSprites[3] = LoadTexture("resources/Store/NPC/StoreNPC_Walking1.png");
+    npcSprites[4] = LoadTexture("resources/Store/NPC/StoreNPC_Walking2.png");
+    // Use static sprites for the remaining slots temporarily
+    npcSprites[5] = LoadTexture("resources/Store/NPC/StoreNPC_Static.png");
+    npcSprites[6] = LoadTexture("resources/Store/NPC/StoreNPC_Static.png");
+    
+    // Load the background texture
+    backgroundTexture = LoadTexture("resources/Store/Store BackGround.png");
+}
+
+void Shop::UnloadResources() {
+    for (int i = 0; i < 7; i++) {
+        if (npcSprites[i].id != 0) {
+            UnloadTexture(npcSprites[i]);
+        }
+    }
+    
+    if (backgroundTexture.id != 0) {
+        UnloadTexture(backgroundTexture);
+    }
+}
+
+void Shop::Activate() {
+    isActive = true;
+    position.y = -100; // Reset position to top
+    showBackground = false; // Reset background visibility
+}
+
+void Shop::Update(float deltaTime) {
+    if (!isActive) return;
+    
+    // Moving toward target position
+    if (position.y < targetPosition.y) {
+        position.y += moveSpeed * deltaTime;
+        
+        if (position.y >= targetPosition.y) {
+            position.y = targetPosition.y;
+            isInteractable = true;
+            showInteractPrompt = true;
+            showBackground = true; // Show background once NPC reaches destination
+        }
+        
+        // Update animation frame for walking
+        frameCounter += deltaTime;
+        if (frameCounter >= frameTime) {
+            frameCounter = 0.0f;
+            currentFrame = (currentFrame >= 3 && currentFrame < 5) ? 
+                          ((currentFrame == 3) ? 4 : 3) : 3;
+        }
+    }
+    else {
+        // When in position, use static sprite
+        currentFrame = 1;
+    }
+}
+
+void Shop::Draw() {
+    if (!isActive) return;
+    
+    // Draw the store background if NPC has reached its destination
+    if (showBackground) {
+        float bgScale = 0.2f; // Adjust as needed
+        float bgWidth = backgroundTexture.width * bgScale;
+        float bgHeight = backgroundTexture.height * bgScale;
+        
+        // Center the background on the screen
+        Vector2 bgPos = {
+            (SCREEN_WIDTH - bgWidth) / 2,
+            (SCREEN_HEIGHT -200 - bgHeight) / 2   
+        };
+        
+        // Draw background behind everything else
+        DrawTextureEx(backgroundTexture, bgPos, 0.0f, bgScale, WHITE);
+    }
+    
+    // Draw the NPC
+    float scale = 0.1f; // Decreased from 3.0f to better match the player's scale
+    DrawTextureEx(npcSprites[currentFrame], position, 0.0f, scale, WHITE);
+    
+    // Draw interaction prompt if interactable
+    if (showInteractPrompt && isInteractable) {
+        const char* promptText = "Press E to interact";
+        int fontSize = 20;
+        Vector2 textSize = MeasureTextEx(GetFontDefault(), promptText, fontSize, 1);
+        
+        DrawText(
+            promptText,
+            position.x - textSize.x / 2,
+            position.y - 50, // Above the NPC
+            fontSize,
+            WHITE
+        );
+    }
+}
+
+bool Shop::HandleInteraction() {
+    if (!isInteractable) return false;
+    
+    if (IsKeyPressed(KEY_E)) {
+        // Handle the interaction
+        showInteractPrompt = false;
+        isInteractable = false;
+        showBackground = false; // Hide background when NPC starts to leave
+        
+        // Start moving back up
+        targetPosition.y = -100;
+        moveSpeed = 300.0f; // Move back faster
+        
+        return true;
+    }
+    
+    return false;
+}

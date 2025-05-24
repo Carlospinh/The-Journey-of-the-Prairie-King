@@ -20,8 +20,7 @@ GameManager::GameManager()
     powerUpDropInterval(10.0f),
     enemySpawnTimer(0.0f),
     enemySpawnInterval(2.0f),
-    shopActivated(false),
-    shopCompletedThisLevel(false), 
+    shopActivated(false), 
     beaverSpawnTimer(0.0f),
     beaverSpawnInterval(15.0f) {
 }
@@ -52,12 +51,12 @@ void GameManager::InitGame() {
     PowerUp::LoadSharedResources();
     
     ui.LoadResources();
-    shop.LoadResources();
     
     player.LoadTextures();
     
     level.LoadResources(1);
     Beaver::LoadSharedResources();
+    shop.LoadResources();
     
     ResetGame();
 }
@@ -66,10 +65,10 @@ void GameManager::ResetGame() {
     player.SetPosition({SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2});
     player.SetLives(3);
     
-    timeRemaining = 20.0f;
+    timeRemaining = 60.0f;
     timeElapsed = 0.0f;
     enemiesKilled = 0;
-    coinsCollected = 40;
+    coinsCollected = 0;
     
     player.SetWheelPowerUp(false);
     player.SetShotgunPowerUp(false);
@@ -173,44 +172,20 @@ std::vector<Vector2> GameManager::GenerateBeaverPath() const {
     Rectangle bounds = level.GetLevelBounds();
     std::vector<Vector2> path;
     
-    // Randomly choose horizontal (0) or vertical (1) direction
-    int direction = GetRandomValue(0, 1);
+    float startX = bounds.x + GetRandomValue(50, (int)bounds.width - 50);
+    Vector2 start = { startX, bounds.y - 30 };
+    path.push_back(start);
     
-    if (direction == 0) {
-        // Horizontal path (left to right or right to left)
-        float y = bounds.y + GetRandomValue(50, (int)bounds.height - 50);
-        
-        if (GetRandomValue(0, 1) == 0) {
-            // Left to right
-            Vector2 start = { bounds.x - 30, y };
-            Vector2 end = { bounds.x + bounds.width + 30, y };
-            path.push_back(start);
-            path.push_back(end);
-        } else {
-            // Right to left
-            Vector2 start = { bounds.x + bounds.width + 30, y };
-            Vector2 end = { bounds.x - 30, y };
-            path.push_back(start);
-            path.push_back(end);
-        }
-    } else {
-        // Vertical path (top to bottom or bottom to top)
+    int numPoints = GetRandomValue(3, 5);
+    for (int i = 0; i < numPoints; i++) {
         float x = bounds.x + GetRandomValue(50, (int)bounds.width - 50);
-        
-        if (GetRandomValue(0, 1) == 0) {
-            // Top to bottom
-            Vector2 start = { x, bounds.y - 30 };
-            Vector2 end = { x, bounds.y + bounds.height + 30 };
-            path.push_back(start);
-            path.push_back(end);
-        } else {
-            // Bottom to top
-            Vector2 start = { x, bounds.y + bounds.height + 30 };
-            Vector2 end = { x, bounds.y - 30 };
-            path.push_back(start);
-            path.push_back(end);
-        }
+        float y = bounds.y + GetRandomValue(50, (int)bounds.height - 50);
+        path.push_back({x, y});
     }
+    
+    float endX = bounds.x + GetRandomValue(50, (int)bounds.width - 50);
+    Vector2 end = { endX, bounds.y + bounds.height + 30 };
+    path.push_back(end);
     
     return path;
 }
@@ -261,9 +236,9 @@ void GameManager::UpdatePlaying(float deltaTime) {
             return;
         }
         
-        if ((level.GetCurrentLevel() == 1 || level.GetCurrentLevel() == 4 || level.GetCurrentLevel() == 6 || level.GetCurrentLevel() == 8) && !shopActivated && !shop.IsActive() && shop.IsShopAvailableForLevel(level.GetCurrentLevel()) && !shopCompletedThisLevel) {
+        if (level.GetCurrentLevel() == 1 && !shopActivated && !shop.IsActive()) {
             shopActivated = true;
-            shop.Activate(coinsCollected, &player);
+            shop.Activate(coinsCollected);
         }
         
         if (!level.IsCompleted()) {
@@ -279,20 +254,10 @@ void GameManager::UpdatePlaying(float deltaTime) {
     if (shop.IsActive()) {
         shop.Update(deltaTime);
         
-        // Check for item pickup collision instead of E key interaction
-        if (shop.CheckItemPickup(player.GetCollisionRect())) {
-            // Item was picked up, coins will be updated when shop deactivates
+        if (shop.IsInteractable() && IsKeyPressed(KEY_E)) {
+            if (shop.HandleInteraction()) {
+            }
         }
-        
-        // Update player coins after shop interaction is complete
-        if (!shop.IsActive() && shopActivated) {
-            coinsCollected = shop.GetRemainingCoins();
-            shop.MarkShopCompletedForLevel(level.GetCurrentLevel());
-            shopCompletedThisLevel = true;
-            shopActivated = false;
-        }
-
-    // Update shop purchase notifications even when shop is not active
     }
     
     if (level.IsTransitioning()) {
@@ -384,8 +349,7 @@ void GameManager::UpdatePlaying(float deltaTime) {
         beaverSpawnTimer += deltaTime;
         if (beaverSpawnTimer >= beaverSpawnInterval) {
             beaverSpawnTimer = 0.0f;
-            // Set next spawn interval to random time around 20 seconds (18-22 seconds)
-            beaverSpawnInterval = GetRandomValue(18, 22);
+            beaverSpawnInterval = GetRandomValue(15, 30);
             SpawnBeaver();
         }
         
@@ -791,9 +755,7 @@ void GameManager::DrawPlaying() {
             deathAnimations[i].Draw();
         }
     }
-    if (shop.IsActive()) {
-        shop.Draw();
-    }
+    
     for (int i = 0; i < MAX_COINS; i++) {
         if (coins[i].IsActive()) {
             coins[i].Draw();
@@ -826,7 +788,9 @@ void GameManager::DrawPlaying() {
     
     player.Draw();
     
-    
+    if (shop.IsActive()) {
+        shop.Draw();
+    }
     
     if (level.ShouldShowArrow()) {
         level.DrawArrow();
@@ -856,20 +820,8 @@ void GameManager::DrawPlaying() {
         player.HasNukePowerUp(),
         player.IsWheelPowerUpActive(),
         player.IsShotgunPowerUpActive(),
-        player.IsCoffeePowerUpActive(),
-        shop.GetGunUpgradeLevel(),
-        shop.GetBootUpgradeLevel(),
-        shop.GetBoxUpgradeLevel()
+        player.IsCoffeePowerUpActive()
     );
-
-
-    // Draw purchased shop items permanently in bottom-left corner
-    ui.DrawShopItems(
-        shop.GetGunUpgradeLevel(),
-        shop.GetBootUpgradeLevel(),
-        shop.GetBoxUpgradeLevel()
-    );
-    // Draw purchase notification if there is a recent purchase
     
     if (player.IsNukeActivated()) {
         float alpha = player.GetNukeEffectTimer() * 2.0f;
