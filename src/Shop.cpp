@@ -424,7 +424,7 @@ bool Shop::CheckItemPickup(const Rectangle& playerRect) {
 }
 bool Shop::IsShopAvailableForLevel(int level) const {
     // Shop is available on levels 1, 4, 6, 8 and only if not already completed
-    if (level == 1 || level == 4 || level == 6 || level == 8) {
+    if (/*level == 1 || */  level == 2 ||     level == 4||level == 6|| level == 8) {
         if (level >= 1 && level <= 9) {
             return !levelShopCompleted[level - 1]; // Return true if not completed yet
         }

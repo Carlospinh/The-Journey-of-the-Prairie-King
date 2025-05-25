@@ -23,7 +23,7 @@ GameManager::GameManager()
     shopActivated(false),
     shopCompletedThisLevel(false), 
     beaverSpawnTimer(0.0f),
-    beaverSpawnInterval(15.0f) {
+    beaverSpawnInterval(10.0f) {
 }
 
 GameManager::~GameManager() {
@@ -43,6 +43,10 @@ void GameManager::InitGame() {
     startSound = LoadSound("resources/Sounds/start.wav");
     SetSoundVolume(startSound, 1.0f);
     
+    // Load enemy hit sound
+    enemyHitSound = LoadSound("resources/Audio/FX/Enemy Hit Sound.mp3");
+    SetSoundVolume(enemyHitSound, 0.8f);
+    
     backgroundMusic = LoadMusicStream("resources/BKMusic/TheOutlaw.mp3");
     backgroundMusic.looping = true;
     
@@ -56,7 +60,7 @@ void GameManager::InitGame() {
     
     player.LoadTextures();
     
-    level.LoadResources(1);
+    level.LoadResources(4);
     Beaver::LoadSharedResources();
     
     ResetGame();
@@ -66,10 +70,10 @@ void GameManager::ResetGame() {
     player.SetPosition({SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2});
     player.SetLives(3);
     
-    timeRemaining = 20.0f;
+    timeRemaining = 60.0f;
     timeElapsed = 0.0f;
     enemiesKilled = 0;
-    coinsCollected = 40;
+    coinsCollected = 0;
     
     player.SetWheelPowerUp(false);
     player.SetShotgunPowerUp(false);
@@ -90,7 +94,7 @@ void GameManager::ResetGame() {
     
     shopActivated = false;
     
-    level.LoadResources(1);
+    level.LoadResources(1);  // Changed from 1 to 5 for testing level 5
     for (int i = 0; i < MAX_BEAVERS; i++) beavers[i].Deactivate();
     beaverSpawnTimer = 0.0f;
 
@@ -113,6 +117,7 @@ void GameManager::CloseGame() {
     UnloadMusicStream(backgroundMusic);
     
     UnloadSound(startSound);
+    UnloadSound(enemyHitSound);  // Add enemy hit sound cleanup
     
     Bullet::UnloadSharedTexture();
     Enemy::UnloadSharedTextures();
@@ -261,7 +266,7 @@ void GameManager::UpdatePlaying(float deltaTime) {
             return;
         }
         
-        if ((level.GetCurrentLevel() == 1 || level.GetCurrentLevel() == 4 || level.GetCurrentLevel() == 6 || level.GetCurrentLevel() == 8) && !shopActivated && !shop.IsActive() && shop.IsShopAvailableForLevel(level.GetCurrentLevel()) && !shopCompletedThisLevel) {
+        if ((/*level.GetCurrentLevel() == 1 ||*/ level.GetCurrentLevel() == 2 || level.GetCurrentLevel() == 4 || level.GetCurrentLevel() == 6 || level.GetCurrentLevel() == 8) && !shopActivated && !shop.IsActive() && shop.IsShopAvailableForLevel(level.GetCurrentLevel()) && !shopCompletedThisLevel) {
             shopActivated = true;
             shop.Activate(coinsCollected, &player);
         }
@@ -272,7 +277,21 @@ void GameManager::UpdatePlaying(float deltaTime) {
         
         Rectangle playerRect = player.GetCollisionRect();
         if (level.IsPlayerInExitZone(playerRect)) {
-            level.StartTransition();
+            // Use the new swipe transition instead of old transition
+            int currentLevel = level.GetCurrentLevel();
+            int nextLevel = currentLevel + 1;
+            if (nextLevel > 9) nextLevel = 1;
+            
+            // Set up player transition animation
+            Vector2 currentPlayerPos = player.GetPosition();
+            Rectangle nextLevelBounds = level.GetLevelBounds();
+            Vector2 targetPlayerPos = {
+                nextLevelBounds.x + nextLevelBounds.width / 2,  // Center horizontally
+                nextLevelBounds.y + nextLevelBounds.height * 0.15f  // Near top (15% from top)
+            };
+            
+            level.SetPlayerTransition(currentPlayerPos, targetPlayerPos);
+            level.StartSwipeTransition(nextLevel);
         }
     }
     
@@ -298,6 +317,12 @@ void GameManager::UpdatePlaying(float deltaTime) {
     if (level.IsTransitioning()) {
         level.Update(deltaTime);
         
+        // Animate player during swipe transition
+        if (level.ShouldAnimatePlayer()) {
+            Vector2 interpolatedPos = level.GetPlayerTransitionPosition();
+            player.SetPosition(interpolatedPos);
+        }
+        
         if (level.IsTransitionComplete()) {
             int currentLevel = level.GetCurrentLevel();
             
@@ -308,13 +333,17 @@ void GameManager::UpdatePlaying(float deltaTime) {
             
             level.LoadResources(nextLevel);
             timeRemaining = 60.0f;
-            
+            shopCompletedThisLevel = false;
             for (int i = 0; i < MAX_ENEMIES; i++) enemies[i].SetActive(false);
             for (int i = 0; i < MAX_BULLETS; i++) bullets[i].SetActive(false);
             for (int i = 0; i < MAX_COINS; i++) coins[i].SetActive(false);
             for (int i = 0; i < MAX_POWERUPS; i++) powerUps[i].SetActive(false);
             
-            player.SetPosition({SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2});
+            // Position player near the top of the new level
+            Rectangle bounds = level.GetLevelBounds();
+            float playerX = bounds.x + bounds.width / 2;
+            float playerY = bounds.y + bounds.height * 0.15f;
+            player.SetPosition({playerX, playerY});
             return;
         }
     }
@@ -699,40 +728,57 @@ void GameManager::HandleNukeEffect() {
 void GameManager::HandleBulletCollisions() {
     for (int i = 0; i < MAX_BULLETS; i++) {
         if (bullets[i].IsActive()) {
-            for (int j = 0; j < MAX_ENEMIES; j++) {
-                if (enemies[j].IsActive() && 
-                    CheckCollisionRecs(bullets[i].GetCollisionRect(), enemies[j].GetCollisionRect())) {
-                    
+            // Check bullet collision with obstacles first
+            bool bulletHitObstacle = false;
+            for (int k = 0; k < level.GetObstacleCount(); k++) {
+                Rectangle obstacle = level.GetObstacle(k);
+                if (CheckCollisionRecs(bullets[i].GetCollisionRect(), obstacle)) {
                     bullets[i].SetActive(false);
-                    
-                    bool enemyDied = enemies[j].TakeDamage(1);
-                    
-                    if (enemyDied) {
-                        enemies[j].SetActive(false);
-                        enemiesKilled++;
-                        
-                        CreateDeathAnimation(enemies[j].GetPosition());
-                        
-                        int dropChance = rand() % 100;
-                        
-                        if (dropChance < 5 && !wheelPowerUpOnField && !player.HasWheelPowerUp() && !player.IsWheelPowerUpActive()) {
-                            SpawnSpecificPowerUp(enemies[j].GetPosition(), POWERUP_WHEEL);
-                        }
-                        else if (dropChance < 10 && !shotgunPowerUpOnField && !player.HasShotgunPowerUp() && !player.IsShotgunPowerUpActive()) {
-                            SpawnSpecificPowerUp(enemies[j].GetPosition(), POWERUP_SHOTGUN);
-                        }
-                        else if (dropChance < 15 && !coffeePowerUpOnField && !player.HasCoffeePowerUp() && !player.IsCoffeePowerUpActive()) {
-                            SpawnSpecificPowerUp(enemies[j].GetPosition(), POWERUP_COFFEE);
-                        }
-                        else if (dropChance < 20 && !nukePowerUpOnField && !player.HasNukePowerUp()) {
-                            SpawnSpecificPowerUp(enemies[j].GetPosition(), POWERUP_NUKE);
-                        }
-                        else if (dropChance < 80) {
-                            SpawnCoin(enemies[j].GetPosition());
-                        }
-                    }
-                    
+                    bulletHitObstacle = true;
                     break;
+                }
+            }
+            
+            // Only check enemy collisions if bullet didn't hit an obstacle
+            if (!bulletHitObstacle) {
+                for (int j = 0; j < MAX_ENEMIES; j++) {
+                    if (enemies[j].IsActive() && 
+                        CheckCollisionRecs(bullets[i].GetCollisionRect(), enemies[j].GetCollisionRect())) {
+                        
+                        bullets[i].SetActive(false);
+                        
+                        bool enemyDied = enemies[j].TakeDamage(1);
+                        
+                        // Play enemy hit sound when bullet hits enemy
+                        PlaySound(enemyHitSound);
+                        
+                        if (enemyDied) {
+                            enemies[j].SetActive(false);
+                            enemiesKilled++;
+                            
+                            CreateDeathAnimation(enemies[j].GetPosition());
+                            
+                            int dropChance = rand() % 100;
+                            
+                            if (dropChance < 5 && !wheelPowerUpOnField && !player.HasWheelPowerUp() && !player.IsWheelPowerUpActive()) {
+                                SpawnSpecificPowerUp(enemies[j].GetPosition(), POWERUP_WHEEL);
+                            }
+                            else if (dropChance < 10 && !shotgunPowerUpOnField && !player.HasShotgunPowerUp() && !player.IsShotgunPowerUpActive()) {
+                                SpawnSpecificPowerUp(enemies[j].GetPosition(), POWERUP_SHOTGUN);
+                            }
+                            else if (dropChance < 15 && !coffeePowerUpOnField && !player.HasCoffeePowerUp() && !player.IsCoffeePowerUpActive()) {
+                                SpawnSpecificPowerUp(enemies[j].GetPosition(), POWERUP_COFFEE);
+                            }
+                            else if (dropChance < 20 && !nukePowerUpOnField && !player.HasNukePowerUp()) {
+                                SpawnSpecificPowerUp(enemies[j].GetPosition(), POWERUP_NUKE);
+                            }
+                            else if (dropChance < 80) {
+                                SpawnCoin(enemies[j].GetPosition());
+                            }
+                        }
+                        
+                        break;
+                    }
                 }
             }
         }

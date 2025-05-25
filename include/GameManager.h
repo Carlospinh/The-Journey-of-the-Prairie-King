@@ -74,6 +74,7 @@ private:
     
     // Audio
     Sound startSound;
+    Sound enemyHitSound;  // Add enemy hit sound
     Music backgroundMusic;
     static const int MAX_BEAVERS = 3;
 Beaver beavers[MAX_BEAVERS];

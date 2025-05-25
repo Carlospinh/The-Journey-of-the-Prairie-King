@@ -1,12 +1,12 @@
 #include "../include/Level.h"
 #include <cstdio>  // Added for sprintf
-
 Level::Level()
     : currentBackground(0),
     backgroundFrameTime(0.5f),
     backgroundFrameCounter(0.0f),
     scale(3.8f),
     currentLevel(1),
+    nextLevel(1),
     levelTransition(false),
     transitionY(0.0f),
     transitionProgress(0.0f),
@@ -15,6 +15,12 @@ Level::Level()
     transitionPause(0.0f),
     pauseDuration(1.0f),
     pauseComplete(false),
+    currentLevelY(0.0f),
+    nextLevelY(0.0f),
+    isSwipeTransition(false),
+    playerStartPos({0, 0}),
+    playerEndPos({0, 0}),
+    shouldAnimatePlayer(false),
     arrowBlinkTimer(0.0f),
     arrowBlinkInterval(0.5f),
     arrowVisible(false) {
@@ -23,6 +29,7 @@ Level::Level()
 Level::~Level() {
     UnloadResources();
 }
+
 
 void Level::LoadResources(int levelNumber) {
     // Store the current level number
@@ -57,10 +64,8 @@ void Level::LoadResources(int levelNumber) {
         sprintf(compPath2, "levels/Level_%d_Completed_2.png", levelNumber);
     }
     
-    // Try to load backgrounds
     backgrounds[0] = LoadTexture(path1);
     
-    // Check if the texture was loaded successfully
     if (backgrounds[0].id == 0) {
         TraceLog(LOG_WARNING, "Failed to load texture: %s", path1);
     }
@@ -68,12 +73,9 @@ void Level::LoadResources(int levelNumber) {
     backgrounds[1] = LoadTexture(path2);
     if (backgrounds[1].id == 0) {
         TraceLog(LOG_WARNING, "Failed to load texture: %s", path2);
-        // If second frame failed to load, use the first frame as fallback
         backgrounds[1] = backgrounds[0];
     }
     
-    // Try to load completed backgrounds, if they exist
-    // If they don't exist, use copies of the regular backgrounds
     FILE *file;
     if ((file = fopen(compPath1, "r"))) {
         fclose(file);
@@ -99,12 +101,10 @@ void Level::LoadResources(int levelNumber) {
     
     arrowTexture = LoadTexture("resources/UI/Arrow.png");
     
-    // Calculate level bounds
     float bgWidth = backgrounds[0].width * scale;
     float bgHeight = backgrounds[0].height * scale;
     float bgX = (SCREEN_WIDTH - bgWidth) / 2;
     float bgY = (SCREEN_HEIGHT - bgHeight) / 2;
-    
     levelBounds = { bgX, bgY, bgWidth, bgHeight };
     
     // Set up exit zone at bottom of level
@@ -115,42 +115,92 @@ void Level::LoadResources(int levelNumber) {
         50
     };
     
-    // Set up obstacles - moved inward to be positioned directly over the bushes
-    float thickness = 50;
-    float gapWidth = 50;
-    float offset = 0; // Previously this was effectively -thickness
+    // Calculate tile dimensions for 16x16 grid
+    float tileWidth = bgWidth / 16.0f;
+    float tileHeight = bgHeight / 16.0f;
     
-    // These obstacles are for the outer boundaries and the bushes
-    // Moved inward to appear directly on the bushes
-    obstacles[1] = { bgX + offset, bgY + bgHeight - thickness, 320, thickness };
-    obstacles[2] = { bgX + offset, bgY + offset, thickness, 370 };
-    obstacles[3] = { bgX + bgWidth - thickness - offset, bgY + offset, thickness, 370 };
-    obstacles[4] = { bgX + offset, bgY + offset, thickness, thickness };
-    obstacles[5] = { bgX + bgWidth - thickness - offset, bgY + offset, thickness, thickness };
-    obstacles[6] = { bgX + offset, bgY + bgHeight - thickness, thickness, thickness };
-    obstacles[7] = { bgX + bgWidth - thickness - offset, bgY + bgHeight - thickness, thickness, thickness };
-    obstacles[8] = { bgX + offset, bgY + bgHeight - thickness, bgHeight, thickness };
+    // Clear all obstacles first - use maximum possible size
+    for (int i = 0; i < 50; i++) {
+        obstacles[i] = {0, 0, 0, 0};
+    }
     
-    float halfWidth = (bgWidth - gapWidth) / 2;
+    int obstacleIndex = 0;
     
-    // Top barriers with gap in the middle (for the entry point) - moved inward
-    obstacles[0] = { bgX + offset, bgY + offset, halfWidth, thickness };
-    obstacles[8] = { bgX + offset + halfWidth + gapWidth, bgY + offset, halfWidth, thickness };
+    // Create boundary walls using 16x16 grid system
+    // These represent the green bushes around the perimeter
+    // Gap distribution: 7 bushes + 3 gap + 6 bushes = 16 total
+    
+    float leftBushes = 7.0f;    // 7 bushes on left/top side
+    float gapSize = 3.0f;       // 3 empty blocks for gap
+    float rightBushes = 6.0f;   // 6 bushes on right/bottom side
+    
+    // Top wall - 7 bushes, 3 gap, 6 bushes
+    obstacles[obstacleIndex++] = {
+        bgX,
+        bgY,
+        leftBushes * tileWidth,
+        tileHeight * 0.95f
+    };
+    obstacles[obstacleIndex++] = {
+        bgX + (leftBushes + gapSize) * tileWidth,
+        bgY,
+        rightBushes * tileWidth,
+        tileHeight * 0.95f
+    };
+    
+    // Bottom wall - 7 bushes, gap reduced by 0.25 from both sides, 6 bushes
+    obstacles[obstacleIndex++] = {
+        bgX,
+        bgY + 15 * tileHeight,
+        (leftBushes + 0.25f) * tileWidth,  // Extended 0.25 blocks inward
+        tileHeight * 0.95f
+    };
+    obstacles[obstacleIndex++] = {
+        bgX + (leftBushes + gapSize - 0.25f) * tileWidth,  // Started 0.25 blocks inward
+        bgY + 15 * tileHeight,
+        rightBushes * tileWidth,
+        tileHeight * 0.95f
+    };
+    
+    // Left wall - 7 bushes (top), 3 gap, 6 bushes (bottom)
+    obstacles[obstacleIndex++] = {
+        bgX,
+        bgY,
+        tileWidth * 0.95f,
+        leftBushes * tileHeight
+    };
+    obstacles[obstacleIndex++] = {
+        bgX,
+        bgY + (leftBushes + gapSize + 0.5f) * tileHeight,  // Gap increased by 0.5, then translated down 1 block total
+        tileWidth * 0.95f,
+        (rightBushes - 0.5f) * tileHeight  // Height adjusted accordingly
+    };
+    
+    // Right wall - 7 bushes (top), 3 gap, 6 bushes (bottom)
+    obstacles[obstacleIndex++] = {
+        bgX + 15 * tileWidth,
+        bgY,
+        tileWidth * 0.95f,
+        leftBushes * tileHeight
+    };
+    obstacles[obstacleIndex++] = {
+        bgX + 15 * tileWidth,
+        bgY + (leftBushes + gapSize + 0.5f) * tileHeight,  // Gap increased by 0.5, then translated down 1 block total
+        tileWidth * 0.95f,
+        (rightBushes - 0.5f) * tileHeight  // Height adjusted accordingly
+    };
     
     // Add level 2 specific inner walls at the specified tile coordinates
-    // The coordinates are in a 16x16 grid, so we need to convert them to screen coordinates
+    // Keep the existing Level 2 logic unchanged
     if (levelNumber == 2) {
-        float tileWidth = bgWidth / 16.0f;
-        float tileHeight = bgHeight / 16.0f;
-    
         // Top-left L-shape
-        obstacles[9] = {
+        obstacles[obstacleIndex++] = {
             bgX + 4 * tileWidth,
             bgY + 4 * tileHeight,
             2 * tileWidth,
             tileHeight
         };
-        obstacles[10] = {
+        obstacles[obstacleIndex++] = {
             bgX + 4 * tileWidth,
             bgY + 4 * tileHeight,
             tileWidth,
@@ -158,13 +208,13 @@ void Level::LoadResources(int levelNumber) {
         };
     
         // Top-right L-shape (moved one column right)
-        obstacles[11] = {
+        obstacles[obstacleIndex++] = {
             bgX + 11 * tileWidth, // 9 -> 10
             bgY + 4 * tileHeight,
             2 * tileWidth,
             tileHeight
         };
-        obstacles[12] = {
+        obstacles[obstacleIndex++] = {
             bgX + 12 * tileWidth, // 11 -> 12
             bgY + 4 * tileHeight,
             tileWidth,
@@ -172,13 +222,13 @@ void Level::LoadResources(int levelNumber) {
         };
     
         // Bottom-left L-shape (already moved down one row)
-        obstacles[13] = {
+        obstacles[obstacleIndex++] = {
             bgX + 4 * tileWidth,
             bgY + 11 * tileHeight,
             tileWidth,
             2 * tileHeight
         };
-        obstacles[14] = {
+        obstacles[obstacleIndex++] = {
             bgX + 4 * tileWidth,
             bgY + 12 * tileHeight,
             2 * tileWidth,
@@ -186,13 +236,13 @@ void Level::LoadResources(int levelNumber) {
         };
     
         // Bottom-right L-shape (moved one column right + already moved down one row)
-        obstacles[15] = {
+        obstacles[obstacleIndex++] = {
             bgX + 12 * tileWidth, // 11 -> 12
             bgY + 11 * tileHeight,
             tileWidth,
             2* tileHeight
         };
-        obstacles[16] = {
+        obstacles[obstacleIndex++] = {
             bgX + 11 * tileWidth, // 9 -> 10
             bgY + 12 * tileHeight,
             2 * tileWidth,
@@ -201,13 +251,425 @@ void Level::LoadResources(int levelNumber) {
     }
     
     // Configure obstacles for levels 3-9 as needed
-    // For now, we'll use the same basic obstacles for all levels except level 2
+    // For now, we'll use the same basic boundary obstacles for all levels except level 2
     // You can add specific obstacle configurations for each level here
-}
+    if (levelNumber >= 3 && levelNumber <= 9) {
+        // Add level-specific obstacles here if needed
+        // The boundary walls are already set up above
+        
+        // Example: Add some inner obstacles for higher levels
+        // You can customize this based on each level's design
+        switch (levelNumber) {
+            case 3:
+                // Add level 3 specific obstacles - Diamond pattern (4 obstacles)
+                // Center the diamond around position (8, 8) on the 16x16 grid
+                // Each obstacle is now 4 blocks away from center (was 3 blocks)
+                
+                // Top obstacle - moved one block further up
+                obstacles[obstacleIndex++] = {
+                    bgX + 8 * tileWidth,
+                    bgY + 4 * tileHeight,
+                    tileWidth,
+                    tileHeight
+                };
+                
+                // Left obstacle - moved one block further left
+                obstacles[obstacleIndex++] = {
+                    bgX + 4 * tileWidth,
+                    bgY + 8 * tileHeight,
+                    tileWidth,
+                    tileHeight
+                };
+                
+                // Right obstacle - moved one block further right
+                obstacles[obstacleIndex++] = {
+                    bgX + 12 * tileWidth,
+                    bgY + 8 * tileHeight,
+                    tileWidth,
+                    tileHeight
+                };
+                
+                // Bottom obstacle - moved one block further down
+                obstacles[obstacleIndex++] = {
+                    bgX + 8 * tileWidth,
+                    bgY + 12 * tileHeight,
+                    tileWidth,
+                    tileHeight
+                };
+                break;
+            case 4:
 
+                // Add level 4 specific obstacles - 7x7 square centered at (8,8) with gaps in middle of each side
+                // Center of 16x16 grid is at (8,8), so 7x7 square spans from (5,5) to (11,11)
+                
+                // Top side of square (y=5, x=5 to 11) - skip middle block (x=8)
+                obstacles[obstacleIndex++] = {
+                    bgX + 5 * tileWidth, bgY + 5 * tileHeight,
+                    3 * tileWidth, tileHeight  // x=5,6,7
+                };
+                obstacles[obstacleIndex++] = {
+                    bgX + 9 * tileWidth, bgY + 5 * tileHeight,
+                    3 * tileWidth, tileHeight  // x=9,10,11
+                };
+                
+                // Bottom side of square (y=11, x=5 to 11) - skip middle block (x=8)
+                obstacles[obstacleIndex++] = {
+                    bgX + 5 * tileWidth, bgY + 11 * tileHeight,
+                    3 * tileWidth, tileHeight  // x=5,6,7
+                };
+                obstacles[obstacleIndex++] = {
+                    bgX + 9 * tileWidth, bgY + 11 * tileHeight,
+                    3 * tileWidth, tileHeight  // x=9,10,11
+                };
+                
+                // Left side of square (x=5, y=6 to 10) - skip middle block (y=8)
+                obstacles[obstacleIndex++] = {
+                    bgX + 5 * tileWidth, bgY + 6 * tileHeight,
+                    tileWidth, 2 * tileHeight  // y=6,7
+                };
+                obstacles[obstacleIndex++] = {
+                    bgX + 5 * tileWidth, bgY + 9 * tileHeight,
+                    tileWidth, 2 * tileHeight  // y=9,10
+                };
+                
+                // Right side of square (x=11, y=6 to 10) - skip middle block (y=8)
+                obstacles[obstacleIndex++] = {
+                    bgX + 11 * tileWidth, bgY + 6 * tileHeight,
+                    tileWidth, 2 * tileHeight  // y=6,7
+                };
+                obstacles[obstacleIndex++] = {
+                    bgX + 11 * tileWidth, bgY + 10 * tileHeight,
+                    tileWidth, 1 * tileHeight  // y=9 only (removed y=10 block)
+                };
+                break;
+    case 5:
+                // Add level 5 specific obstacles - covering bush patterns
+                // Based on 16x16 grid system
+                
+                // Row 2: Horizontal block spanning 4 bushes at start, 3 blocks at end
+                obstacles[obstacleIndex++] = {
+                    bgX + 0 * tileWidth,     // Start at column 1
+                    bgY + 1 * tileHeight,    // Row 2
+                    4 * tileWidth,           // Span 4 bushes horizontally
+                    tileHeight
+                };
+                obstacles[obstacleIndex++] = {
+                    bgX + 13 * tileWidth,    // Near end of row (columns 12-14)
+                    bgY + 1 * tileHeight,    // Row 2
+                    3 * tileWidth,           // 3 blocks horizontal
+                    tileHeight
+                };
+                
+                // Row 14 (16-2): Same pattern as row 2
+                obstacles[obstacleIndex++] = {
+                    bgX + 0 * tileWidth,     // Start at column 1
+                    bgY + 14 * tileHeight,   // Row 14 (0-indexed as 13)
+                    4 * tileWidth,           // Span 4 bushes horizontally
+                    tileHeight
+                };
+                obstacles[obstacleIndex++] = {
+                    bgX + 12 * tileWidth,    // Near end of row (columns 12-14)
+                    bgY + 13 * tileHeight,   // Row 14 (0-indexed as 13)
+                    3 * tileWidth,           // 3 blocks horizontal
+                    tileHeight
+                };
+                
+                // Row 3: 2x2 blocks at start and end
+                obstacles[obstacleIndex++] = {
+                    bgX + 0 * tileWidth,     // Start at column 1
+                    bgY + 2 * tileHeight,    // Row 3
+                    2 * tileWidth,           // 2x2 block
+                    2 * tileHeight
+                };
+                obstacles[obstacleIndex++] = {
+                    bgX + 14 * tileWidth,    // End columns (13-14)
+                    bgY + 1 * tileHeight,    // Row 3
+                    2 * tileWidth,           // 2x2 block
+                    2 * tileHeight
+                };
+                //new 
+                obstacles[obstacleIndex++] = {
+                    bgX + 13 * tileWidth,    // End columns (13-14)
+                    bgY + 3 * tileHeight,    // Row 3
+                    1 * tileWidth,           // 2x2 block
+                    1 * tileHeight
+                };
+                obstacles[obstacleIndex++] = {
+                    bgX + 3 * tileWidth,    // End columns (13-14)
+                    bgY + 3 * tileHeight,    // Row 3
+                    1 * tileWidth,           // 2x2 block
+                    1 * tileHeight
+                };
+
+                obstacles[obstacleIndex++] = {
+                    bgX + 3 * tileWidth,    // End columns (13-14)
+                    bgY + 12 * tileHeight,    // Row 3
+                    1 * tileWidth,           // 2x2 block
+                    1 * tileHeight
+                };
+                obstacles[obstacleIndex++] = {
+                    bgX + 13 * tileWidth,    // End columns (13-14)
+                    bgY + 12 * tileHeight,    // Row 3
+                    1 * tileWidth,           // 2x2 block
+                    1 * tileHeight
+                };
+                obstacles[obstacleIndex++] = {
+                    bgX + 13 * tileWidth,    // End columns (13-14)
+                    bgY + 14 * tileHeight,    // Row 3
+                    2 * tileWidth,           // 2x2 block
+                    1 * tileHeight
+                };
+                // Row 4: 2x2 blocks at start and end (part of the previous 2x2 blocks)
+                // These are already covered by the 2x2 blocks above
+                
+                // Mirror at bottom: Row 12-13 (corresponding to rows 3-4)
+              
+                break;
+            case 6:
+                // Add level 6 specific obstacles
+
+                obstacles[obstacleIndex++] = {
+                    bgX + 2 * tileWidth,    // End columns (13-14)
+                    bgY + 3 * tileHeight,    // Row 3
+                    1 * tileWidth,           // 2x2 block
+                    1 * tileHeight
+                };
+                obstacles[obstacleIndex++] = {
+                    bgX + 3 * tileWidth,    // End columns (13-14)
+                    bgY + 4 * tileHeight,    // Row 3
+                    1 * tileWidth,           // 2x2 block
+                    1 * tileHeight
+                };
+
+                obstacles[obstacleIndex++] = {
+                    bgX + 11 * tileWidth,    // End columns (13-14)
+                    bgY + 3 * tileHeight,    // Row 3
+                    1 * tileWidth,           // 2x2 block
+                    1 * tileHeight
+                };
+                obstacles[obstacleIndex++] = {
+                    bgX + 10 * tileWidth,    // End columns (13-14)
+                    bgY + 6 * tileHeight,    // Row 3
+                    1 * tileWidth,           // 2x2 block
+                    1 * tileHeight
+                };
+                obstacles[obstacleIndex++] = {
+                    bgX + 10 * tileWidth,    // End columns (13-14)
+                    bgY + 8 * tileHeight,    // Row 3
+                    1 * tileWidth,           // 2x2 block
+                    2 * tileHeight
+                };
+                obstacles[obstacleIndex++] = {
+                    bgX + 5 * tileWidth,    // End columns (13-14)
+                    bgY + 9 * tileHeight,    // Row 3
+                    1 * tileWidth,           // 2x2 block
+                    1 * tileHeight
+                };
+
+                obstacles[obstacleIndex++] = {
+                    bgX + 3 * tileWidth,    // End columns (13-14)
+                    bgY + 12 * tileHeight,    // Row 3
+                    1 * tileWidth,           // 2x2 block
+                    1 * tileHeight
+                };
+                obstacles[obstacleIndex++] = {
+                    bgX + 10 * tileWidth,    // End columns (13-14)
+                    bgY + 12 * tileHeight,    // Row 3
+                    1 * tileWidth,           // 2x2 block
+                    1 * tileHeight
+                };
+                obstacles[obstacleIndex++] = {
+                    bgX + 12 * tileWidth,    // End columns (13-14)
+                    bgY + 12 * tileHeight,    // Row 3
+                    1 * tileWidth,           // 2x2 block
+                    1 * tileHeight
+                };
+                obstacles[obstacleIndex++] = {
+                    bgX + 12 * tileWidth,    // End columns (13-14)
+                    bgY + 10 * tileHeight,    // Row 3
+                    1 * tileWidth,           // 2x2 block
+                    1 * tileHeight
+                };
+                break;
+            case 7:
+                // Add level 7 specific obstacles
+
+                obstacles[obstacleIndex++] = {
+                    bgX + 0 * tileWidth,    // End columns (13-14)
+                    bgY + 5 * tileHeight,    // Row 3
+                    4 * tileWidth,           // 2x2 block
+                    1 * tileHeight
+                };
+
+                obstacles[obstacleIndex++] = {
+                    bgX + 5 * tileWidth,    // End columns (13-14)
+                    bgY + 5 * tileHeight,    // Row 3
+                    3 * tileWidth,           // 2x2 block
+                    1 * tileHeight
+                };
+                obstacles[obstacleIndex++] = {
+                    bgX + 9 * tileWidth,    // End columns (13-14)
+                    bgY + 5 * tileHeight,    // Row 3
+                    3 * tileWidth,           // 2x2 block
+                    1 * tileHeight
+                };
+
+                obstacles[obstacleIndex++] = {
+                    bgX + 13 * tileWidth,    // End columns (13-14)
+                    bgY + 5 * tileHeight,    // Row 3
+                    3 * tileWidth,           // 2x2 block
+                    1 * tileHeight
+                };
+
+
+                obstacles[obstacleIndex++] = {
+                    bgX + 0 * tileWidth,    // End columns (13-14)
+                    bgY + 10 * tileHeight,    // Row 3
+                    4 * tileWidth,           // 2x2 block
+                    1 * tileHeight
+                };
+
+                obstacles[obstacleIndex++] = {
+                    bgX + 5 * tileWidth,    // End columns (13-14)
+                    bgY + 10 * tileHeight,    // Row 3
+                    3 * tileWidth,           // 2x2 block
+                    1 * tileHeight
+                };
+                obstacles[obstacleIndex++] = {
+                    bgX + 9 * tileWidth,    // End columns (13-14)
+                    bgY + 10 * tileHeight,    // Row 3
+                    3 * tileWidth,           // 2x2 block
+                    1 * tileHeight
+                };
+
+                obstacles[obstacleIndex++] = {
+                    bgX + 13 * tileWidth,    // End columns (13-14)
+                    bgY + 10 * tileHeight,    // Row 3
+                    3 * tileWidth,           // 2x2 block
+                    1 * tileHeight
+                };
+
+                break;
+            case 8:
+                // Add level 8 specific obstacles
+
+                obstacles[obstacleIndex++] = {
+                    bgX + 4 * tileWidth,    // End columns (13-14)
+                    bgY + 4 * tileHeight,    // Row 3
+                    2 * tileWidth,           // 2x2 block
+                    2 * tileHeight
+                };
+                obstacles[obstacleIndex++] = {
+                    bgX + 10 * tileWidth,    // End columns (13-14)
+                    bgY + 4 * tileHeight,    // Row 3
+                    1 * tileWidth,           // 2x2 block
+                    2 * tileHeight
+                };
+                obstacles[obstacleIndex++] = {
+                    bgX + 12 * tileWidth,    // End columns (13-14)
+                    bgY + 4 * tileHeight,    // Row 3
+                    1 * tileWidth,           // 2x2 block
+                    2 * tileHeight
+                };
+                //bottom half
+              
+                obstacles[obstacleIndex++] = {
+                    bgX + 4 * tileWidth,    // End columns (13-14)
+                    bgY + 12 * tileHeight,    // Row 3
+                    2 * tileWidth,           // 2x2 block
+                    1 * tileHeight
+                };
+                obstacles[obstacleIndex++] = {
+                    bgX + 4 * tileWidth,    // End columns (13-14)
+                    bgY + 10 * tileHeight,    // Row 3
+                    2 * tileWidth,           // 2x2 block
+                    1 * tileHeight
+                };
+                obstacles[obstacleIndex++] = {
+                    bgX + 10 * tileWidth,    // End columns (13-14)
+                    bgY + 10 * tileHeight,    // Row 3
+                    1 * tileWidth,           // 2x2 block
+                    1 * tileHeight
+                }; 
+                obstacles[obstacleIndex++] = {
+                    bgX + 10 * tileWidth,    // End columns (13-14)
+                    bgY + 12 * tileHeight,    // Row 3
+                    1 * tileWidth,           // 2x2 block
+                    1 * tileHeight
+                }; 
+                obstacles[obstacleIndex++] = {
+                    bgX + 12 * tileWidth,    // End columns (13-14)
+                    bgY + 10 * tileHeight,    // Row 3
+                    1 * tileWidth,           // 2x2 block
+                    1 * tileHeight
+                };  
+                obstacles[obstacleIndex++] = {
+                    bgX + 12 * tileWidth,    // End columns (13-14)
+                    bgY + 12 * tileHeight,    // Row 3
+                    1 * tileWidth,           // 2x2 block
+                    1 * tileHeight
+                };  
+                break;
+            case 9:
+                // Add level 9 specific obstacles
+                obstacles[obstacleIndex++] = {
+                    bgX + 0 * tileWidth,    // End columns (13-14)
+                    bgY + 1 * tileHeight,    // Row 3
+                    7 * tileWidth,           // 2x2 block
+                    1 * tileHeight
+                };  
+                obstacles[obstacleIndex++] = {
+                    bgX + 10 * tileWidth,    // End columns (13-14)
+                    bgY + 1 * tileHeight,    // Row 3
+                    6 * tileWidth,           // 2x2 block
+                    1 * tileHeight
+                };  
+
+                obstacles[obstacleIndex++] = {
+                    bgX + 0 * tileWidth,    // End columns (13-14)
+                    bgY + 14 * tileHeight,    // Row 3
+                    7 * tileWidth,           // 2x2 block
+                    1 * tileHeight
+                };  
+                obstacles[obstacleIndex++] = {
+                    bgX + 10 * tileWidth,    // End columns (13-14)
+                    bgY + 14 * tileHeight,    // Row 3
+                    6 * tileWidth,           // 2x2 block
+                    1 * tileHeight
+                };  
+
+                obstacles[obstacleIndex++] = {
+                    bgX + 6 * tileWidth,    // End columns (13-14)
+                    bgY + 8 * tileHeight,    // Row 3
+                    1 * tileWidth,           // 2x2 block
+                    1 * tileHeight
+                };  
+
+                obstacles[obstacleIndex++] = {
+                    bgX + 8 * tileWidth,    // End columns (13-14)
+                    bgY + 6 * tileHeight,    // Row 3
+                    1 * tileWidth,           // 2x2 block
+                    1 * tileHeight
+                };  
+                obstacles[obstacleIndex++] = {
+                    bgX + 10 * tileWidth,    // End columns (13-14)
+                    bgY + 8 * tileHeight,    // Row 3
+                    1 * tileWidth,           // 2x2 block
+                    1 * tileHeight
+                };  
+                obstacles[obstacleIndex++] = {
+                    bgX + 8 * tileWidth,    // End columns (13-14)
+                    bgY + 9 * tileHeight,    // Row 3
+                    1 * tileWidth,           // 2x2 block
+                    1 * tileHeight
+                };  
+                break;
+        }
+    }
+}
 void Level::UnloadResources() {
     // Keep track of which textures we've already unloaded
-    int unloadedIds[4] = {0};
+    int unloadedIds[8] = {0}; // Increased to handle next level textures too
     int count = 0;
     
     // Unload backgrounds
@@ -220,7 +682,7 @@ void Level::UnloadResources() {
             }
         }
         
-        if (!alreadyUnloaded) {
+        if (!alreadyUnloaded && backgrounds[i].id != 0) {
             UnloadTexture(backgrounds[i]);
             unloadedIds[count++] = backgrounds[i].id;
         }
@@ -236,13 +698,31 @@ void Level::UnloadResources() {
             }
         }
         
-        if (!alreadyUnloaded) {
+        if (!alreadyUnloaded && completedBackgrounds[i].id != 0) {
             UnloadTexture(completedBackgrounds[i]);
             unloadedIds[count++] = completedBackgrounds[i].id;
         }
     }
     
-    UnloadTexture(arrowTexture);
+    // Unload next level backgrounds (if they're different)
+    for (int i = 0; i < 2; i++) {
+        bool alreadyUnloaded = false;
+        for (int j = 0; j < count; j++) {
+            if (nextLevelBackgrounds[i].id == unloadedIds[j]) {
+                alreadyUnloaded = true;
+                break;
+            }
+        }
+        
+        if (!alreadyUnloaded && nextLevelBackgrounds[i].id != 0) {
+            UnloadTexture(nextLevelBackgrounds[i]);
+            unloadedIds[count++] = nextLevelBackgrounds[i].id;
+        }
+    }
+    
+    if (arrowTexture.id != 0) {
+        UnloadTexture(arrowTexture);
+    }
 }
 
 void Level::SetCompleted() {
@@ -317,6 +797,12 @@ void Level::Update(float deltaTime) {
 }
 
 void Level::Draw() {
+    if (levelTransition && isSwipeTransition) {
+        // Use the new swipe transition drawing
+        DrawSwipeTransition();
+        return;
+    }
+    
     Rectangle sourceRec = {
         0, 0,
         (float)backgrounds[currentBackground].width, 
@@ -345,7 +831,7 @@ void Level::Draw() {
         // This creates the effect of only cubes remaining after the level slides away
         int obstacleCount = GetObstacleCount();
         for (int i = 0; i < obstacleCount; i++) {
-            DrawRectangleLinesEx(obstacles[i], 2, DARKGRAY);
+            DrawRectangleLinesEx(obstacles[i], 2, BLANK);
         }
     }
     else {
@@ -355,7 +841,7 @@ void Level::Draw() {
         // Draw obstacle blocks on top of the background
         int obstacleCount = GetObstacleCount();
         for (int i = 0; i < obstacleCount; i++) {
-            DrawRectangleLinesEx(obstacles[i], 2, DARKGRAY);
+            DrawRectangleLinesEx(obstacles[i], 2, BLANK);
         }
     }
 }
@@ -388,9 +874,29 @@ Rectangle Level::GetLevelBounds() const {
 }
 
 Rectangle Level::GetObstacle(int index) const {
-    // For level 2, we have additional inner walls (up to index 16)
-    // For other levels, we only have the standard 9 obstacles
-    int maxIndex = (currentLevel == 2) ? 16 : 8;
+    // Updated obstacle counts for each level
+    int maxIndex;
+    if (currentLevel == 2) {
+        maxIndex = 16;  // 8 boundary walls + 8 L-shaped inner obstacles
+    } else if (currentLevel == 3) {
+        maxIndex = 12;  // 8 boundary walls + 4 diamond pattern obstacles
+    } else if (currentLevel == 4) {
+        maxIndex = 16;  // 8 boundary walls + 8 square perimeter obstacles
+    } else if (currentLevel == 5) {
+        maxIndex = 18; 
+    } else if (currentLevel == 6) {
+        maxIndex = 18; 
+    } else if (currentLevel == 7) {
+        maxIndex = 12+4;  // 8 boundary walls + 4 horizontal bars
+    }else if (currentLevel  == 8 ){
+       maxIndex = 8+ 9 ; 
+    }
+    else if (currentLevel == 9 ){
+        maxIndex = 8+ 8 ; 
+    }
+     else {
+        maxIndex = 8;   // Just boundary walls for other levels
+    }
     
     if (index >= 0 && index <= maxIndex) {
         return obstacles[index];
@@ -400,7 +906,26 @@ Rectangle Level::GetObstacle(int index) const {
 
 int Level::GetObstacleCount() const {
     // Return the appropriate number of obstacles based on the current level
-    return (currentLevel == 2) ? 17 : 9;
+    if (currentLevel == 2) {
+        return 17;  // 8 boundary walls + 8 L-shaped inner obstacles + 1 extra
+    } else if (currentLevel == 3) {
+        return 13;  // 8 boundary walls + 4 diamond pattern obstacles + 1 extra
+    } else if (currentLevel == 4) {
+        return 17;  // 8 boundary walls + 8 square perimeter obstacles + 1 extra
+    } else if (currentLevel == 5) {
+        return 19;  // 8 boundary walls + 10 scattered obstacles + 1 extra
+    } else if (currentLevel == 6) {
+        return 19;  // 8 boundary walls + 10 scattered obstacles + 1 extra
+    } else if (currentLevel == 7) {
+        return 13+4;  // 8 boundary walls + 4 horizontal bars + 1 extra
+    }else if (currentLevel == 8){
+        return  8+ 9 +1; 
+    } else if (currentLevel ==9 ){
+        return 8 + 8 +1 ; 
+    }
+     else {
+        return 9;   // Just the 8 boundary walls + 1 extra for other levels
+    }
 }
 
 bool Level::ShouldShowArrow() const {
@@ -420,4 +945,118 @@ void Level::DrawArrow() {
 
 int Level::GetCurrentLevel() const {
     return currentLevel;
+}
+
+void Level::StartSwipeTransition(int nextLevelNumber) {
+    if (!levelTransition) {
+        nextLevel = nextLevelNumber;
+        levelTransition = true;
+        isSwipeTransition = true;
+        transitionProgress = 0.0f;
+        transitionDuration = 2.0f; // Slower transition (was 1.2f)
+        pauseComplete = false;
+        transitionPause = 0.0f;
+        pauseDuration = 0.3f; // Slightly longer pause
+        
+        // Initialize positions for swipe transition
+        currentLevelY = levelBounds.y;
+        nextLevelY = levelBounds.y + levelBounds.height;
+        
+        // Load next level backgrounds for transition
+        char path1[100], path2[100];
+        
+        if (nextLevelNumber == 1) {
+            sprintf(path1, "levels/Level_1.png");
+            sprintf(path2, "levels/Level_1_2.png");
+        } else if (nextLevelNumber >= 3 && nextLevelNumber <= 7) {
+            sprintf(path1, "levels/Level_%d.png", nextLevelNumber);
+            sprintf(path2, "levels/Level_%d_2.png", nextLevelNumber);
+        } else if (nextLevelNumber >= 8 && nextLevelNumber <= 9) {
+            sprintf(path1, "levels/Level_%d_1.png", nextLevelNumber);
+            sprintf(path2, "levels/Level_%d_1.png", nextLevelNumber);
+        } else {
+            sprintf(path1, "levels/Level_%d.png", nextLevelNumber);
+            sprintf(path2, "levels/Level_%d_2.png", nextLevelNumber);
+        }
+        
+        nextLevelBackgrounds[0] = LoadTexture(path1);
+        nextLevelBackgrounds[1] = LoadTexture(path2);
+        
+        if (nextLevelBackgrounds[1].id == 0) {
+            nextLevelBackgrounds[1] = nextLevelBackgrounds[0];
+        }
+    }
+}
+
+void Level::DrawSwipeTransition() {
+    if (!isSwipeTransition) return;
+    
+    Rectangle sourceRec = {
+        0, 0,
+        (float)backgrounds[currentBackground].width,
+        (float)backgrounds[currentBackground].height
+    };
+    
+    Vector2 origin = { 0, 0 };
+    
+    // Draw current level sliding up
+    if (transitionProgress < 1.0f) {
+        float easedProgress = 1.0f - powf(1.0f - transitionProgress, 3);
+        currentLevelY = levelBounds.y - (levelBounds.height * easedProgress);
+        
+        Rectangle currentDestRec = {
+            levelBounds.x, currentLevelY,
+            levelBounds.width, levelBounds.height
+        };
+        
+        DrawTexturePro(backgrounds[currentBackground], sourceRec, currentDestRec, origin, 0.0f, WHITE);
+    }
+    
+    // Draw next level sliding up from bottom
+    if (nextLevelBackgrounds[0].id != 0) {
+        float easedProgress = 1.0f - powf(1.0f - transitionProgress, 3);
+        nextLevelY = levelBounds.y + levelBounds.height - (levelBounds.height * easedProgress);
+        
+        Rectangle nextSourceRec = {
+            0, 0,
+            (float)nextLevelBackgrounds[currentBackground].width,
+            (float)nextLevelBackgrounds[currentBackground].height
+        };
+        
+        Rectangle nextDestRec = {
+            levelBounds.x, nextLevelY,
+            levelBounds.width, levelBounds.height
+        };
+        
+        DrawTexturePro(nextLevelBackgrounds[currentBackground], nextSourceRec, nextDestRec, origin, 0.0f, WHITE);
+    }
+}
+
+int Level::GetNextLevel() const {
+    return nextLevel;
+}
+
+void Level::SetPlayerTransition(Vector2 startPos, Vector2 endPos) {
+    playerStartPos = startPos;
+    playerEndPos = endPos;
+    shouldAnimatePlayer = true;
+}
+
+Vector2 Level::GetPlayerTransitionPosition() const {
+    if (!shouldAnimatePlayer || !isSwipeTransition) {
+        return playerStartPos;
+    }
+    
+    // Use smoother easing for player movement (ease-in-out)
+    float t = transitionProgress;
+    float easedT = t * t * (3.0f - 2.0f * t); // Smoothstep interpolation
+    
+    return {
+        playerStartPos.x + (playerEndPos.x - playerStartPos.x) * easedT,
+        playerStartPos.y + (playerEndPos.y - playerStartPos.y) * easedT
+    };
+}
+
+bool Level::ShouldAnimatePlayer() const {
+    return shouldAnimatePlayer && isSwipeTransition;
 }

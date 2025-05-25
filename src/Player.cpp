@@ -86,7 +86,7 @@ void Player::LoadTextures() {
     
     // Set sound volumes
     SetSoundVolume(footstepSound, 0.5f);
-    SetSoundVolume(gunshotSound, 0.7f);
+    SetSoundVolume(gunshotSound, 1.0f);  // Increased from 0.7f to 1.0f for maximum volume
     SetSoundVolume(hitSound, 0.6f);
     SetSoundVolume(pickupPowerUpSound, 0.6f);
     SetSoundVolume(nukeSound, 0.8f);
@@ -205,25 +205,25 @@ void Player::Shoot(Bullet bullets[], int& bulletCount, float deltaTime) {
     bool shouldShoot = false;
     
     if (IsKeyPressed(KEY_UP)) {
-        bulletDir ={ 0, -1 };
+        bulletDir = { 0, -1 };
         shouldShoot = true;
         currentShootDirection = UP;
         shootAnimationTimer = shootAnimationDuration;
     }
     if (IsKeyPressed(KEY_DOWN)) {
-        bulletDir ={ 0, 1 };
+        bulletDir = { 0, 1 };
         shouldShoot = true;
         currentShootDirection = DOWN;
         shootAnimationTimer = shootAnimationDuration;
     }
     if (IsKeyPressed(KEY_LEFT)) {
-        bulletDir ={ -1, 0 };
+        bulletDir = { -1, 0 };
         shouldShoot = true;
         currentShootDirection = LEFT;
         shootAnimationTimer = shootAnimationDuration;
     }
     if (IsKeyPressed(KEY_RIGHT)) {
-        bulletDir ={ 1, 0 };
+        bulletDir = { 1, 0 };
         shouldShoot = true;
         currentShootDirection = RIGHT;
         shootAnimationTimer = shootAnimationDuration;
@@ -301,10 +301,10 @@ void Player::ShootShotgun(Bullet bullets[], int& bulletCount) {
     // Base direction based on shoot direction
     Vector2 baseDir = {0, 0};
     switch (currentShootDirection) {
-        case UP:    baseDir ={0, -1}; break;
-        case DOWN:  baseDir ={0, 1}; break;
-        case LEFT:  baseDir ={-1, 0}; break;
-        case RIGHT: baseDir ={1, 0}; break;
+        case UP:    baseDir = {0, -1}; break;
+        case DOWN:  baseDir = {0, 1}; break;
+        case LEFT:  baseDir = {-1, 0}; break;
+        case RIGHT: baseDir = {1, 0}; break;
         default:    return;  // No direction, no shot
     }
     
@@ -318,12 +318,12 @@ void Player::ShootShotgun(Bullet bullets[], int& bulletCount) {
     // Calculate spread directions based on base direction
     if (baseDir.x == 0) { // Shooting up or down
         // Add horizontal spread
-        directions[1] ={ -0.3f, baseDir.y * 0.7f };
-        directions[2] ={ 0.3f, baseDir.y * 0.7f };
+        directions[1] = { -0.3f, baseDir.y * 0.7f };
+        directions[2] = { 0.3f, baseDir.y * 0.7f };
     } else { // Shooting left or right
         // Add vertical spread
-        directions[1] ={ baseDir.x * 0.7f, -0.3f };
-        directions[2] ={ baseDir.x * 0.7f, 0.3f };
+        directions[1] = { baseDir.x * 0.7f, -0.3f };
+        directions[2] = { baseDir.x * 0.7f, 0.3f };
     }
 
     // Normalize the spread directions

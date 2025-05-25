@@ -7,6 +7,7 @@ class Level {
 private:
     Texture2D backgrounds[2];           // Background textures (alternating)
     Texture2D completedBackgrounds[2];   // Completed level backgrounds
+    Texture2D nextLevelBackgrounds[2];  // Next level background textures for transition
     Texture2D arrowTexture;             // Arrow texture for level exit
     int currentBackground;              // Current background index (0 or 1)
     float backgroundFrameTime;          // Time between background frames
@@ -14,6 +15,7 @@ private:
     float scale;                        // Scale for drawing
     
     int currentLevel;                   // Current level number
+    int nextLevel;                      // Next level number for transition
     
     // Level transition
     bool levelTransition;               // Is level transitioning
@@ -25,6 +27,16 @@ private:
     float pauseDuration;                // Duration of pause between levels
     bool pauseComplete;                 // Whether the pause is complete
     
+    // Swipe transition variables
+    float currentLevelY;                // Y position of current level during transition
+    float nextLevelY;                   // Y position of next level during transition
+    bool isSwipeTransition;             // Whether we're doing a swipe transition
+    
+    // Player transition variables
+    Vector2 playerStartPos;             // Player's starting position during transition
+    Vector2 playerEndPos;               // Player's target position in new level
+    bool shouldAnimatePlayer;           // Whether to animate player during transition
+    
     // Arrow blinking
     float arrowBlinkTimer;              // Timer for arrow blinking
     float arrowBlinkInterval;           // Interval for arrow blinking
@@ -33,7 +45,7 @@ private:
     // Level boundaries
     Rectangle levelBounds;              // Boundaries of the level playfield
     Rectangle exitZone;                 // Exit zone for level transition
-    Rectangle obstacles[17];            // Obstacle rectangles (increased from 13 to 17 for L-shaped walls in level 2)
+    Rectangle obstacles[50];            // Obstacle rectangles (increased to 50 to accommodate complex patterns)
 
 public:
     Level();
@@ -84,6 +96,24 @@ public:
     
     // Get current level number
     int GetCurrentLevel() const;
+    
+    // Start swipe transition to next level
+    void StartSwipeTransition(int nextLevelNumber);
+    
+    // Draw both current and next level during swipe transition
+    void DrawSwipeTransition();
+    
+    // Get next level number
+    int GetNextLevel() const;
+    
+    // Set player transition positions
+    void SetPlayerTransition(Vector2 startPos, Vector2 endPos);
+    
+    // Get interpolated player position during transition
+    Vector2 GetPlayerTransitionPosition() const;
+    
+    // Check if player should be animated during transition
+    bool ShouldAnimatePlayer() const;
 };
 
 #endif // LEVEL_H
