@@ -316,13 +316,13 @@ void GameManager::UpdatePlaying(float deltaTime) {
     
     if (level.IsTransitioning()) {
         level.Update(deltaTime);
-        
+
         // Animate player during swipe transition
         if (level.ShouldAnimatePlayer()) {
             Vector2 interpolatedPos = level.GetPlayerTransitionPosition();
             player.SetPosition(interpolatedPos);
         }
-        
+  
         if (level.IsTransitionComplete()) {
             int currentLevel = level.GetCurrentLevel();
             
