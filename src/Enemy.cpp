@@ -5,6 +5,7 @@
 Texture2D Enemy::orcFrames[2];
 Texture2D Enemy::ogreFrames[2];
 Texture2D Enemy::mummyFrames[2];
+Texture2D Enemy::bossFrames[2];
 
 Enemy::Enemy() 
     : Entity(), 
@@ -17,7 +18,21 @@ Enemy::Enemy()
     hitFlashTime(0.0f),
     chasingBeaver(false),
     beaverTarget({0, 0}),
-    beaverChaseRange(400.0f) { // Increased from 200.0f to 400.0f
+    beaverChaseRange(400.0f),
+    bossSpawnPos({0, 0}),
+    bossMovementRange(300.0f),
+    bossDirection(1),
+    bossRainTimer(0.0f),
+    bossRainInterval(4.0f)  , 
+    bossShootTimer(0.0f),
+    bossShootInterval(3.0f),
+    bossRailTimer(0.0f),
+    bossRailInterval(5.0f),
+    bossRailBurstCount(0),
+    bossRailBurstDelay(0.1f),
+    bossRailBurstTimer(0.0f),
+    bossRailBurstActive(false)
+    {
 }
 
 Enemy::~Enemy() {
@@ -33,6 +48,9 @@ void Enemy::LoadSharedTextures() {
     
     mummyFrames[0] = LoadTexture("resources/Enemies/Mummy/Mummy1.png");
     mummyFrames[1] = LoadTexture("resources/Enemies/Mummy/Mummy2.png");
+    
+    bossFrames[0] = LoadTexture("resources/Boss Battle/Boss/Boss_Walking_1.png");
+    bossFrames[1] = LoadTexture("resources/Boss Battle/Boss/Boss_Walking_2.png");
 }
 
 void Enemy::UnloadSharedTextures() {
@@ -45,6 +63,9 @@ void Enemy::UnloadSharedTextures() {
     
     UnloadTexture(mummyFrames[0]);
     UnloadTexture(mummyFrames[1]);
+    
+    UnloadTexture(bossFrames[0]);
+    UnloadTexture(bossFrames[1]);
 }
 
 void Enemy::Init(Vector2 position, float scale, float speed, EnemyType enemyType) {
@@ -66,12 +87,20 @@ void Enemy::Init(Vector2 position, float scale, float speed, EnemyType enemyType
         case ENEMY_OGRE:
             this->speed = speed * 0.8f;      // Ogres are slower but have more health
             this->frameDuration = 0.25f;     // Slower animation
-            this->health = 2;                // Ogres have 2 health points
+            this->health = 3;                // Ogres have 2 health points
             break;
         case ENEMY_MUMMY:
             this->speed = speed * 1.2f;      // Mummies are faster
             this->frameDuration = 0.15f;     // Faster animation
-            this->health = 4;                // Mummies have 4 health points
+            this->health = 6;                // Mummies have 4 health points
+            break;
+        case ENEMY_BOSS:
+            this->speed = speed * 1.2f;      // Same speed as mummy
+            this->frameDuration = 0.15f;     // Same animation speed as mummy
+            this->health = 6;                // Same health as mummy
+            this->bossSpawnPos = position;   // Store spawn position for horizontal movement
+            this->bossMovementRange = 300.0f; // Boss can move 300 pixels left/right from spawn
+            this->bossDirection = 1;         // Start moving right
             break;
     }
     
@@ -88,6 +117,10 @@ void Enemy::Init(Vector2 position, float scale, float speed, EnemyType enemyType
         case ENEMY_MUMMY:
             this->frames[0] = mummyFrames[0];
             this->frames[1] = mummyFrames[1];
+            break;
+        case ENEMY_BOSS:
+            this->frames[0] = bossFrames[0];
+            this->frames[1] = bossFrames[1];
             break;
     }
 }
@@ -130,6 +163,15 @@ void Enemy::Update(float deltaTime) {
                 // Speed will be normalized in the next movement
             }
             break;
+            
+        case ENEMY_BOSS:
+            // Boss has same behavior as mummy but can be customized
+            if (GetRandomValue(0, 180) == 0) {
+                // Quick burst of speed like mummy
+                speed *= 1.8f;
+                // Speed will be normalized in the next movement
+            }
+            break;
     }
 }
 
@@ -166,6 +208,10 @@ void Enemy::MoveToward(Vector2 targetPos, float deltaTime) {
             break;
         case ENEMY_MUMMY:
             // Gradually restore original speed if it was increased
+            speed = speed * 0.9f + (100.0f * 1.2f) * 0.1f;
+            break;
+        case ENEMY_BOSS:
+            // Gradually restore original speed like mummy
             speed = speed * 0.9f + (100.0f * 1.2f) * 0.1f;
             break;
     }
@@ -209,6 +255,26 @@ void Enemy::MoveToward(Vector2 targetPos, float deltaTime) {
                 position.y += direction.y * speed * deltaTime;
             }
             break;
+            
+        case ENEMY_BOSS:
+            // Boss moves only horizontally in a fixed path from spawn position
+            // Ignore target position and move left/right based on current direction
+            
+            // Calculate distance from spawn position
+            float distanceFromSpawn = position.x - bossSpawnPos.x;
+            
+            // Check if boss has reached movement limits and needs to change direction
+            if (distanceFromSpawn >= bossMovementRange) {
+                bossDirection = -1; // Move left
+            } else if (distanceFromSpawn <= -bossMovementRange) {
+                bossDirection = 1;  // Move right
+            }
+            
+            // Move horizontally only (no vertical movement)
+            position.x += bossDirection * speed * deltaTime;
+            // Keep Y position fixed at spawn position
+            position.y = bossSpawnPos.y;
+            break;
     }
 }
 
@@ -246,11 +312,13 @@ EnemyType Enemy::GetType() const {
 bool Enemy::CanAppearInLevel(EnemyType type, int level) {
     switch (type) {
         case ENEMY_ORC:
-            return level >= 1; // Orcs appear in levels 1-9
+            return level >= 1 && level <= 9; // Orcs appear in levels 1-9
         case ENEMY_OGRE:
-            return level >= 2; // Ogres appear in levels 2-9
+            return level >= 2 && level <= 9; // Ogres appear in levels 2-9
         case ENEMY_MUMMY:
-            return level >= 4; // Mummies appear in levels 4-9
+            return level >= 4 && level <= 9; // Mummies appear in levels 4-9
+        case ENEMY_BOSS:
+            return level == 10; // Boss only appears in level 10
         default:
             return false;
     }
@@ -292,8 +360,106 @@ bool Enemy::IsChasingBeaver() const {
 }
 
 float Enemy::GetDistanceToBeaver() const {
-    if (!chasingBeaver) return -1.0f;
+    if (chasingBeaver) {
+        float dx = beaverTarget.x - position.x;
+        float dy = beaverTarget.y - position.y;
+        return sqrtf(dx * dx + dy * dy);
+    }
+    return 0.0f;
+}
+
+bool Enemy::ShouldBossShoot(float deltaTime, Vector2 playerPos) {
+    if (type != ENEMY_BOSS || !active) return false;
     
-    return sqrtf((beaverTarget.x - position.x) * (beaverTarget.x - position.x) + 
-                (beaverTarget.y - position.y) * (beaverTarget.y - position.y));
+    bossShootTimer += deltaTime;
+    if (bossShootTimer >= bossShootInterval) {
+        bossShootTimer = 0.0f;
+        return true;
+    }
+    
+    return false;
+}
+
+Vector2 Enemy::GetBossShootDirection(Vector2 playerPos) const {
+    if (type != ENEMY_BOSS || !active) return {0, 0};
+    
+    // Calculate direction from boss center to player
+    Vector2 bossCenter = {
+        position.x + (frames[0].width * scale) / 2,
+        position.y + (frames[0].height * scale) / 2
+    };
+    
+    Vector2 direction = {
+        playerPos.x - bossCenter.x,
+        playerPos.y - bossCenter.y
+    };
+    
+    // Normalize the direction
+    float length = sqrtf(direction.x * direction.x + direction.y * direction.y);
+    if (length > 0) {
+        direction.x /= length;
+        direction.y /= length;
+    }
+    
+    return direction;
+}
+
+bool Enemy::ShouldBossShootRain(float deltaTime, Vector2 playerPos) {
+    if (type != ENEMY_BOSS || !active) return false;
+    
+    // Check if we're in the middle of a rail burst
+    if (bossRailBurstActive) {
+        bossRailBurstTimer += deltaTime;
+        if (bossRailBurstTimer >= bossRailBurstDelay) {
+            bossRailBurstTimer = 0.0f;
+            bossRailBurstCount--;
+            
+            if (bossRailBurstCount <= 0) {
+                bossRailBurstActive = false;
+                return false;
+            }
+            return true; // Fire another bullet in the burst
+        }
+        return false;
+    }
+    
+    // Check if it's time to start a new rail burst
+    bossRailTimer += deltaTime;
+    if (bossRailTimer >= bossRailInterval) {
+        bossRailTimer = 0.0f;
+        bossRailBurstActive = true;
+        bossRailBurstCount = 20; // 10 consecutive bullets
+        bossRailBurstTimer = 0.0f;
+        return true; // Fire the first bullet
+    }
+    
+    return false;
+}
+
+
+void Enemy::GetRainBulletDirections(Vector2 playerPos, Vector2* directions, int bulletCount) const {
+    if (type != ENEMY_BOSS || !active || bulletCount <= 0) return;
+    
+    // Calculate direction from boss center to player (same direction for all bullets in rail)
+    Vector2 bossCenter = {
+        position.x + (frames[0].width * scale) / 2,
+        position.y + (frames[0].height * scale) / 2
+    };
+    
+    Vector2 baseDirection = {
+        playerPos.x - bossCenter.x,
+        playerPos.y - bossCenter.y
+    };
+    
+    // Normalize the direction
+    float length = sqrtf(baseDirection.x * baseDirection.x + baseDirection.y * baseDirection.y);
+    if (length > 0) {
+        baseDirection.x /= length;
+        baseDirection.y /= length;
+    }
+    
+    // All bullets go in the same direction (straight line rail gun)
+    for (int i = 0; i < bulletCount; i++) {
+        directions[i] = baseDirection;
+    }
 }

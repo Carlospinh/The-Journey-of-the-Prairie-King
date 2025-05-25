@@ -46,6 +46,7 @@ private:
     Rectangle levelBounds;              // Boundaries of the level playfield
     Rectangle exitZone;                 // Exit zone for level transition
     Rectangle obstacles[50];            // Obstacle rectangles (increased to 50 to accommodate complex patterns)
+    bool penetrableObstacles[50];       // Track which obstacles are penetrable by bullets
 
 public:
     Level();
@@ -114,6 +115,9 @@ public:
     
     // Check if player should be animated during transition
     bool ShouldAnimatePlayer() const;
+    
+    // Check if obstacle is penetrable by bullets
+    bool IsObstaclePenetrable(int index) const;
 };
 
 #endif // LEVEL_H

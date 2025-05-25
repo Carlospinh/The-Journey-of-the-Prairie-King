@@ -8,7 +8,8 @@ enum PowerUpType {
     POWERUP_WHEEL,
     POWERUP_SHOTGUN,
     POWERUP_COFFEE,
-    POWERUP_NUKE
+    POWERUP_NUKE,
+    POWERUP_LIFE
 };
 
 class PowerUp : public Collectible {
@@ -18,6 +19,7 @@ private:
     static Texture2D shotgunTexture;   // Shared shotgun texture
     static Texture2D coffeeTexture;    // Shared coffee texture
     static Texture2D nukeTexture;      // Shared nuke texture
+    static Texture2D lifeTexture;      // Shared life texture
     static Sound pickupSound;          // Shared pickup sound
     
     PowerUpType type;                  // Type of power-up
@@ -35,12 +37,14 @@ public:
     static Texture2D GetShotgunTexture();
     static Texture2D GetCoffeeTexture();
     static Texture2D GetNukeTexture();
+    static Texture2D GetLifeTexture();
     
     // Initialize power-ups at given position
     void InitWheel(Vector2 position);
     void InitShotgun(Vector2 position);
     void InitCoffee(Vector2 position);
     void InitNuke(Vector2 position);
+    void InitLife(Vector2 position);
     
     // Play pickup sound
     static void PlayPickupSound();
@@ -51,6 +55,7 @@ public:
     bool IsShotgun() const;
     bool IsCoffee() const;
     bool IsNuke() const;
+    bool IsLife() const;
 };
 
 #endif // POWERUP_H

@@ -109,7 +109,7 @@ void Shop::InitializeItems() {
     items[1] = {SHOP_BOOT, bootTextures[bootLevel < 2 ? bootLevel : 1], 
                 "Boot Upgrade", "Increases speed", bootPrice, bootLevel + 1, false};
     items[2] = {SHOP_BOX, boxTextures[boxLevel < 3 ? boxLevel : 2], 
-                "Box Upgrade", "More ammo/health", boxPrice, boxLevel + 1, false};
+                "Penetration", "Bullet penetration+damage", boxPrice, boxLevel + 1, false};
                 
     if (gunLevel >= 3) items[0].price = -1;
     if (bootLevel >= 2) items[1].price = -1;

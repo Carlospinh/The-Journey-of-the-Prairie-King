@@ -26,7 +26,8 @@ typedef enum GameState {
     MENU,
     PLAYING,
     GAME_OVER,
-    LEVEL_COMPLETED
+    LEVEL_COMPLETED,
+    PLAYER_EXITING // Player exit animation after trophy
 } GameState;
 
 // Shooting directions
@@ -35,7 +36,11 @@ typedef enum ShootingDirection {
     UP,
     DOWN,
     LEFT,
-    RIGHT
+    RIGHT,
+    UP_LEFT,
+    UP_RIGHT,
+    DOWN_LEFT,
+    DOWN_RIGHT
 } ShootingDirection;
 
 #endif // COMMON_H

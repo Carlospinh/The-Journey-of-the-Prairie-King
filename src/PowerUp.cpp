@@ -5,6 +5,7 @@ Texture2D PowerUp::wheelTexture;
 Texture2D PowerUp::shotgunTexture;
 Texture2D PowerUp::coffeeTexture;
 Texture2D PowerUp::nukeTexture;
+Texture2D PowerUp::lifeTexture;
 Sound PowerUp::pickupSound;
 
 PowerUp::PowerUp() : Collectible(), type(POWERUP_WHEEL) {
@@ -18,6 +19,7 @@ void PowerUp::LoadSharedResources() {
     shotgunTexture = LoadTexture("resources/PowerUps/Shotgun.png");
     coffeeTexture = LoadTexture("resources/PowerUps/Coffee.png");
     nukeTexture = LoadTexture("resources/PowerUps/Nuke.png");
+    lifeTexture = LoadTexture("resources/UI/Live.png");
     
     pickupSound = LoadSound("resources/Sounds/PickUpPowerUp.wav");
     SetSoundVolume(pickupSound, 0.6f);
@@ -28,6 +30,7 @@ void PowerUp::UnloadSharedResources() {
     UnloadTexture(shotgunTexture);
     UnloadTexture(coffeeTexture);
     UnloadTexture(nukeTexture);
+    UnloadTexture(lifeTexture);
     UnloadSound(pickupSound);
 }
 
@@ -49,7 +52,7 @@ void PowerUp::InitShotgun(Vector2 position) {
 
 void PowerUp::InitCoffee(Vector2 position) {
     this->position = position;
-    this->scale = 0.7f;  // Increased from 0.2f to 0.5f (2.5x larger)
+    this->scale = 0.8f;  // Increased from 0.2f to 0.5f (2.5x larger)
     this->active = true;
     this->type = POWERUP_COFFEE;
     SetTexture(coffeeTexture);
@@ -61,6 +64,14 @@ void PowerUp::InitNuke(Vector2 position) {
     this->active = true;
     this->type = POWERUP_NUKE;
     SetTexture(nukeTexture);
+}
+
+void PowerUp::InitLife(Vector2 position) {
+    this->position = position;
+    this->scale = 0.15f;
+    this->active = true;
+    this->type = POWERUP_LIFE;
+    SetTexture(lifeTexture);
 }
 
 void PowerUp::PlayPickupSound() {
@@ -87,6 +98,10 @@ bool PowerUp::IsNuke() const {
     return type == POWERUP_NUKE;
 }
 
+bool PowerUp::IsLife() const {
+    return type == POWERUP_LIFE;
+}
+
 Texture2D PowerUp::GetWheelTexture() {
     return wheelTexture;
 }
@@ -101,4 +116,8 @@ Texture2D PowerUp::GetCoffeeTexture() {
 
 Texture2D PowerUp::GetNukeTexture() {
     return nukeTexture;
+}
+
+Texture2D PowerUp::GetLifeTexture() {
+    return lifeTexture;
 }

@@ -39,7 +39,34 @@ private:
     Level level;
     UI ui;
     Shop shop; // Added Shop object
+    Texture2D trophyTexture;
+    Vector2 trophyPosition;
+    float trophyLiftOffset;
+    bool trophyLiftAnimation;
     
+    // Boss defeat sequence variables
+    bool bossDefeated;
+    bool showWhiteScreen;
+    bool showCrackEffect;
+    bool playingLightning;
+    bool showBridge;
+    bool trophySpawned;
+    float bossDefeatTimer;
+    float whiteScreenDuration;
+    float crackEffectTimer;
+    float lightningTimer;
+    float bridgeTimer;
+    int lightningFrame;
+    int maxLightningFrames;
+    Vector2 bridgePosition;
+    Vector2 bossDeathPosition;  // Store where the boss died
+    
+    // Bridge texture for boss defeat sequence
+    Texture2D bridgeTexture;
+
+    // Trophy management
+    bool trophyOnField;
+
     // Game statistics
     int enemiesKilled;
     int coinsCollected;
@@ -59,6 +86,10 @@ private:
     // PowerUp state - Nuke
     bool nukePowerUpOnField;
     float nukeDropCooldown;
+    
+    // PowerUp state - Life
+    bool lifePowerUpOnField;
+    float lifeDropCooldown;
     
     // PowerUp drop timing
     float powerUpDropTimer;
@@ -85,6 +116,12 @@ float beaverSpawnInterval;
 void UpdateBeavers(float deltaTime);
 void SpawnBeaver();
 std::vector<Vector2> GenerateBeaverPath() const;
+
+// Player exit animation
+    bool playerExiting;
+    float playerExitTimer;
+    Vector2 playerExitTarget;
+
     // Helper methods
     void UpdatePlaying(float deltaTime);
     void UpdateGameOver(float deltaTime);
@@ -96,6 +133,7 @@ std::vector<Vector2> GenerateBeaverPath() const;
     
     void SpawnEnemy();
     void SpawnCoin(Vector2 position);
+    void SpawnTrophy(Vector2 position);  // Add trophy spawning method
     void SpawnPowerUp(Vector2 position);
     void SpawnSpecificPowerUp(Vector2 position, PowerUpType type);
     void CreateDeathAnimation(Vector2 position);
@@ -104,6 +142,16 @@ std::vector<Vector2> GenerateBeaverPath() const;
     void HandleBulletCollisions();
     void HandleNukeEffect(); // Eliminate all enemies when nuke is activated
     void UpdateEnemyBeaverDistraction(); // Make enemies chase beavers when active
+    
+    // Boss defeat sequence methods
+    void HandleBossDefeat(Vector2 bossPosition);
+    void UpdateBossDefeatSequence(float deltaTime);
+    void DrawBossDefeatSequence();  // Add this missing declaration
+    void PlayWhiteScreenWithCrack();
+    void PlayLightningAnimation();
+    void DisplayBridge();
+    void UpdateTrophy(float deltaTime);
+    void DrawBossDefeatEffects();
     
 public:
     GameManager();

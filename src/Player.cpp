@@ -35,7 +35,7 @@ Player::Player()
     hasCoffeePowerUp(false),
     coffeePowerUpActive(false),
     coffeePowerUpTimer(0.0f),
-    coffeePowerUpDuration(12.0f),  // Set to 12 seconds
+    coffeePowerUpDuration(16.0f),  // Changed from 12.0f to 16.0f
     coffeeSpeedMultiplier(1.6f),
     // Nuke power-up
     hasNukePowerUp(false),
@@ -203,26 +203,56 @@ void Player::Shoot(Bullet bullets[], int& bulletCount, float deltaTime) {
     
     Vector2 bulletDir = { 0, 0 };
     bool shouldShoot = false;
+    bool upPressed = IsKeyPressed(KEY_UP);
+    bool downPressed = IsKeyPressed(KEY_DOWN);
+    bool leftPressed = IsKeyPressed(KEY_LEFT);
+    bool rightPressed = IsKeyPressed(KEY_RIGHT);
     
-    if (IsKeyPressed(KEY_UP)) {
+    // Check for diagonal directions first (when two keys are pressed simultaneously)
+    if (upPressed && leftPressed) {
+        bulletDir = { -0.7071f, -0.7071f }; // Normalized diagonal vector
+        shouldShoot = true;
+        currentShootDirection = UP_LEFT;
+        shootAnimationTimer = shootAnimationDuration;
+    }
+    else if (upPressed && rightPressed) {
+        bulletDir = { 0.7071f, -0.7071f }; // Normalized diagonal vector
+        shouldShoot = true;
+        currentShootDirection = UP_RIGHT;
+        shootAnimationTimer = shootAnimationDuration;
+    }
+    else if (downPressed && leftPressed) {
+        bulletDir = { -0.7071f, 0.7071f }; // Normalized diagonal vector
+        shouldShoot = true;
+        currentShootDirection = DOWN_LEFT;
+        shootAnimationTimer = shootAnimationDuration;
+    }
+    else if (downPressed && rightPressed) {
+        bulletDir = { 0.7071f, 0.7071f }; // Normalized diagonal vector
+        shouldShoot = true;
+        currentShootDirection = DOWN_RIGHT;
+        shootAnimationTimer = shootAnimationDuration;
+    }
+    // If no diagonal direction, check for cardinal directions
+    else if (upPressed) {
         bulletDir = { 0, -1 };
         shouldShoot = true;
         currentShootDirection = UP;
         shootAnimationTimer = shootAnimationDuration;
     }
-    if (IsKeyPressed(KEY_DOWN)) {
+    else if (downPressed) {
         bulletDir = { 0, 1 };
         shouldShoot = true;
         currentShootDirection = DOWN;
         shootAnimationTimer = shootAnimationDuration;
     }
-    if (IsKeyPressed(KEY_LEFT)) {
+    else if (leftPressed) {
         bulletDir = { -1, 0 };
         shouldShoot = true;
         currentShootDirection = LEFT;
         shootAnimationTimer = shootAnimationDuration;
     }
-    if (IsKeyPressed(KEY_RIGHT)) {
+    else if (rightPressed) {
         bulletDir = { 1, 0 };
         shouldShoot = true;
         currentShootDirection = RIGHT;
@@ -230,9 +260,13 @@ void Player::Shoot(Bullet bullets[], int& bulletCount, float deltaTime) {
     }
     
     if (shouldShoot) {
+        // Calculate bullet damage and penetration based on box upgrade level
+        int bulletDamage = 1 + boxUpgradeLevel; // Level 0=1 damage, Level 1=2 damage, Level 2=3 damage, Level 3=4 damage
+        bool hasPenetration = boxUpgradeLevel > 0; // Penetration starts at level 1
+        
         // If shotgun power-up is active, shoot a shotgun blast
         if (shotgunPowerUpActive) {
-            ShootShotgun(bullets, bulletCount);
+            ShootShotgun(bullets, bulletCount, bulletDamage, hasPenetration);
         } else {
             // Normal shooting
             Texture2D currentTex = GetCurrentTexture();
@@ -249,7 +283,7 @@ void Player::Shoot(Bullet bullets[], int& bulletCount, float deltaTime) {
                         playerCenterY - bullets[i].GetCollisionRect().height / 2 + bulletDir.y * 20
                     };
                     
-                    bullets[i].Init(bulletPos, bulletDir);
+                    bullets[i].Init(bulletPos, bulletDir, bulletDamage, hasPenetration);
                     bulletCount++;
                     lastBulletTime = GetTime();
                     
@@ -267,6 +301,10 @@ void Player::ShootCircle(Bullet bullets[], int& bulletCount) {
     float playerCenterX = position.x + (sprites[0].width * scale) / 2;
     float playerCenterY = position.y + (sprites[0].height * scale) / 2;
 
+    // Calculate bullet damage and penetration based on box upgrade level
+    int bulletDamage = 1 + boxUpgradeLevel; // Level 0=1 damage, Level 1=2 damage, Level 2=3 damage, Level 3=4 damage
+    bool hasPenetration = boxUpgradeLevel > 0; // Penetration starts at level 1
+
     for (int i = 0; i < 8; i++) {
         float angle = i * 45 * DEG2RAD;
         Vector2 direction = { cosf(angle), sinf(angle) };
@@ -279,7 +317,7 @@ void Player::ShootCircle(Bullet bullets[], int& bulletCount) {
                     playerCenterY - bullets[j].GetCollisionRect().height / 2
                 };
                 
-                bullets[j].Init(bulletPos, direction);
+                bullets[j].Init(bulletPos, direction, bulletDamage, hasPenetration);
                 bulletCount++;
                 break;
             }
@@ -345,6 +383,89 @@ void Player::ShootShotgun(Bullet bullets[], int& bulletCount) {
                 };
                 
                 bullets[j].Init(bulletPos, directions[i]);
+                bulletCount++;
+                bulletsFired++;
+                break;
+            }
+        }
+    }
+    
+    // Only play sound once for all three bullets
+    PlaySound(gunshotSound);
+    lastBulletTime = GetTime();
+}
+
+// New method to shoot in a shotgun pattern with damage and penetration
+void Player::ShootShotgun(Bullet bullets[], int& bulletCount, int damage, bool penetration) {
+    if (bulletCount >= MAX_BULLETS - 3) return;
+
+    Texture2D currentTex = GetCurrentTexture();
+    float pWidth = currentTex.width * scale;
+    float pHeight = currentTex.height * scale;
+    float playerCenterX = position.x + pWidth / 2;
+    float playerCenterY = position.y + pHeight / 2;
+    
+    // Base direction based on shoot direction
+    Vector2 baseDir = {0, 0};
+    switch (currentShootDirection) {
+        case UP:        baseDir = {0, -1}; break;
+        case DOWN:      baseDir = {0, 1}; break;
+        case LEFT:      baseDir = {-1, 0}; break;
+        case RIGHT:     baseDir = {1, 0}; break;
+        case UP_LEFT:   baseDir = {-0.7071f, -0.7071f}; break;
+        case UP_RIGHT:  baseDir = {0.7071f, -0.7071f}; break;
+        case DOWN_LEFT: baseDir = {-0.7071f, 0.7071f}; break;
+        case DOWN_RIGHT: baseDir = {0.7071f, 0.7071f}; break;
+        default:        return;  // No direction, no shot
+    }
+    
+    // Create 3 bullet directions: one straight, two at angles
+    Vector2 directions[3] = {
+        baseDir,  // Center bullet - straight ahead
+        {0, 0},   // Left spread bullet
+        {0, 0}    // Right spread bullet
+    };
+    
+    // Calculate spread directions based on base direction
+    if (currentShootDirection == UP || currentShootDirection == DOWN) {
+        // Add horizontal spread for up/down
+        directions[1] = { -0.3f, baseDir.y * 0.7f };
+        directions[2] = { 0.3f, baseDir.y * 0.7f };
+    } 
+    else if (currentShootDirection == LEFT || currentShootDirection == RIGHT) {
+        // Add vertical spread for left/right
+        directions[1] = { baseDir.x * 0.7f, -0.3f };
+        directions[2] = { baseDir.x * 0.7f, 0.3f };
+    }
+    else {
+        // For diagonal directions, create a spread perpendicular to the base direction
+        // Calculate perpendicular vectors to the diagonal
+        float perpX = -baseDir.y;
+        float perpY = baseDir.x;
+        
+        directions[1] = { baseDir.x * 0.85f + perpX * 0.25f, baseDir.y * 0.85f + perpY * 0.25f };
+        directions[2] = { baseDir.x * 0.85f - perpX * 0.25f, baseDir.y * 0.85f - perpY * 0.25f };
+    }
+
+    // Normalize the spread directions
+    for (int i = 1; i < 3; i++) {
+        float length = sqrtf(directions[i].x * directions[i].x + directions[i].y * directions[i].y);
+        directions[i].x /= length;
+        directions[i].y /= length;
+    }
+    
+    // Shoot all three bullets with damage and penetration
+    int bulletsFired = 0;
+    for (int i = 0; i < 3 && bulletsFired < 3; i++) {
+        // Find an inactive bullet
+        for (int j = 0; j < MAX_BULLETS; j++) {
+            if (!bullets[j].IsActive()) {
+                Vector2 bulletPos = {
+                    playerCenterX - bullets[j].GetCollisionRect().width / 2 + directions[i].x * 20,
+                    playerCenterY - bullets[j].GetCollisionRect().height / 2 + directions[i].y * 20
+                };
+                
+                bullets[j].Init(bulletPos, directions[i], damage, penetration);
                 bulletCount++;
                 bulletsFired++;
                 break;
@@ -546,6 +667,10 @@ Texture2D Player::GetCurrentTexture() const {
             case DOWN: return shootSprites[0];
             case LEFT: return shootSprites[1];
             case RIGHT: return shootSprites[2];
+            case UP_LEFT: return shootSprites[3]; // Use UP animation for UP_LEFT
+            case UP_RIGHT: return shootSprites[3]; // Use UP animation for UP_RIGHT
+            case DOWN_LEFT: return shootSprites[0]; // Use DOWN animation for DOWN_LEFT
+            case DOWN_RIGHT: return shootSprites[0]; // Use DOWN animation for DOWN_RIGHT
             default: return sprites[currentFrame];
             }
         } else if (movingRight) {
@@ -554,6 +679,10 @@ Texture2D Player::GetCurrentTexture() const {
             case DOWN: return shootSprites[4];
             case LEFT: return shootSprites[5];
             case RIGHT: return shootSprites[6];
+            case UP_LEFT: return shootSprites[7]; // Use UP animation for UP_LEFT
+            case UP_RIGHT: return shootSprites[7]; // Use UP animation for UP_RIGHT
+            case DOWN_LEFT: return shootSprites[4]; // Use DOWN animation for DOWN_LEFT
+            case DOWN_RIGHT: return shootSprites[4]; // Use DOWN animation for DOWN_RIGHT
             default: return sprites[currentFrame];
             }
         } else {
@@ -562,6 +691,10 @@ Texture2D Player::GetCurrentTexture() const {
             case DOWN: return shootSprites[8];
             case LEFT: return shootSprites[9];
             case RIGHT: return shootSprites[10];
+            case UP_LEFT: return shootSprites[11]; // Use UP animation for UP_LEFT
+            case UP_RIGHT: return shootSprites[11]; // Use UP animation for UP_RIGHT
+            case DOWN_LEFT: return shootSprites[8]; // Use DOWN animation for DOWN_LEFT
+            case DOWN_RIGHT: return shootSprites[8]; // Use DOWN animation for DOWN_RIGHT
             default: return sprites[currentFrame];
             }
         }

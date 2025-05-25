@@ -89,6 +89,7 @@ public:
     void Shoot(Bullet bullets[], int& bulletCount, float deltaTime);
     void ShootCircle(Bullet bullets[], int& bulletCount);
     void ShootShotgun(Bullet bullets[], int& bulletCount);
+    void ShootShotgun(Bullet bullets[], int& bulletCount, int damage, bool penetration);
     
     // Power-up methods - Wheel
     void SetWheelPowerUp(bool has);

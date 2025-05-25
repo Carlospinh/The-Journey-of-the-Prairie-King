@@ -56,6 +56,12 @@ void Level::LoadResources(int levelNumber) {
         sprintf(path2, "levels/Level_%d_1.png", levelNumber); // Use same frame twice
         sprintf(compPath1, "levels/Level_%d_Completed_1.png", levelNumber);
         sprintf(compPath2, "levels/Level_%d_Completed_1.png", levelNumber); // Use same frame twice
+    } else if (levelNumber == 10) {
+        // Level 10 uses boss level textures
+        sprintf(path1, "levels/Boss_Level_1.png");
+        sprintf(path2, "levels/Boss_Level_1.png"); // Use same frame for both
+        sprintf(compPath1, "levels/Boss_Level_Completed_1.png");
+        sprintf(compPath2, "levels/Boss_Level_Completed_2.png");
     } else {
         // Level 2 follows this pattern
         sprintf(path1, "levels/Level_%d.png", levelNumber);
@@ -122,6 +128,7 @@ void Level::LoadResources(int levelNumber) {
     // Clear all obstacles first - use maximum possible size
     for (int i = 0; i < 50; i++) {
         obstacles[i] = {0, 0, 0, 0};
+        penetrableObstacles[i] = false;  // Default: all obstacles are solid
     }
     
     int obstacleIndex = 0;
@@ -250,10 +257,8 @@ void Level::LoadResources(int levelNumber) {
         };
     }
     
-    // Configure obstacles for levels 3-9 as needed
-    // For now, we'll use the same basic boundary obstacles for all levels except level 2
-    // You can add specific obstacle configurations for each level here
-    if (levelNumber >= 3 && levelNumber <= 9) {
+    // Configure obstacles for levels 3-10 as needed
+    if (levelNumber >= 3 && levelNumber <= 10) {
         // Add level-specific obstacles here if needed
         // The boundary walls are already set up above
         
@@ -264,7 +269,57 @@ void Level::LoadResources(int levelNumber) {
                 // Add level 3 specific obstacles - Diamond pattern (4 obstacles)
                 // Center the diamond around position (8, 8) on the 16x16 grid
                 // Each obstacle is now 4 blocks away from center (was 3 blocks)
-                
+                obstacles[obstacleIndex++] = {
+                    bgX + 1 * tileWidth,     // Start at column 1
+                    bgY + 1 * tileHeight,   // Row 14 (0-indexed as 13)
+                    2 * tileWidth,           // Span 4 bushes horizontally
+                    tileHeight
+                };
+                obstacles[obstacleIndex++] = {
+                    bgX + 1 * tileWidth,     // Start at column 1
+                    bgY + 2 * tileHeight,   // Row 14 (0-indexed as 13)
+                    1 * tileWidth,           // Span 4 bushes horizontally
+                    tileHeight
+                };
+
+                obstacles[obstacleIndex++] = {
+                    bgX + 13 * tileWidth,     // Start at column 1
+                    bgY + 1 * tileHeight,   // Row 14 (0-indexed as 13)
+                    2 * tileWidth,           // Span 4 bushes horizontally
+                    tileHeight
+                };
+                obstacles[obstacleIndex++] = {
+                    bgX + 14 * tileWidth,     // Start at column 1
+                    bgY + 2 * tileHeight,   // Row 14 (0-indexed as 13)
+                    1 * tileWidth,           // Span 4 bushes horizontally
+                    tileHeight
+                };
+
+                obstacles[obstacleIndex++] = {
+                    bgX + 1 * tileWidth,     // Start at column 1
+                    bgY + 13 * tileHeight,   // Row 14 (0-indexed as 13)
+                    1 * tileWidth,           // Span 4 bushes horizontally
+                    tileHeight
+                };
+                obstacles[obstacleIndex++] = {
+                    bgX + 1 * tileWidth,     // Start at column 1
+                    bgY + 14 * tileHeight,   // Row 14 (0-indexed as 13)
+                    2 * tileWidth,           // Span 4 bushes horizontally
+                    tileHeight
+                };
+
+                obstacles[obstacleIndex++] = {
+                    bgX + 14 * tileWidth,     // Start at column 1
+                    bgY + 13 * tileHeight,   // Row 14 (0-indexed as 13)
+                    1 * tileWidth,           // Span 4 bushes horizontally
+                    tileHeight
+                };
+                obstacles[obstacleIndex++] = {
+                    bgX + 13 * tileWidth,     // Start at column 1
+                    bgY + 14 * tileHeight,   // Row 14 (0-indexed as 13)
+                    1 * tileWidth,           // Span 4 bushes horizontally
+                    tileHeight
+                };
                 // Top obstacle - moved one block further up
                 obstacles[obstacleIndex++] = {
                     bgX + 8 * tileWidth,
@@ -298,7 +353,6 @@ void Level::LoadResources(int levelNumber) {
                 };
                 break;
             case 4:
-
                 // Add level 4 specific obstacles - 7x7 square centered at (8,8) with gaps in middle of each side
                 // Center of 16x16 grid is at (8,8), so 7x7 square spans from (5,5) to (11,11)
                 
@@ -664,6 +718,55 @@ void Level::LoadResources(int levelNumber) {
                     1 * tileHeight
                 };  
                 break;
+            case 10:
+                // Add level 10 specific obstacles - Boss level with strategic cover
+                // Create a more complex obstacle layout for the boss level
+                // 8 obs
+                // Central fortress-like structure
+                obstacles[obstacleIndex] = {
+                    bgX + 0 * tileWidth,    // Left pillar
+                    bgY + 8 * tileHeight,
+                    8 * tileWidth,
+                    1 * tileHeight
+                };
+                penetrableObstacles[obstacleIndex] = true;  // This is penetrable by bullets
+                obstacleIndex++;
+                
+                obstacles[obstacleIndex] = {
+                    bgX + 9 * tileWidth,    // Right pillar
+                    bgY + 8 * tileHeight,
+                    7 * tileWidth,
+                    1 * tileHeight
+                };
+                penetrableObstacles[obstacleIndex] = true;  // This is penetrable by bullets
+                obstacleIndex++;
+
+                // Rest of the obstacles are solid (default false)
+                obstacles[obstacleIndex++] = {
+                    bgX + 7 * tileWidth,    
+                    bgY + 12 * tileHeight,
+                    3 * tileWidth,
+                    1 * tileHeight
+                };  
+                obstacles[obstacleIndex++] = {
+                    bgX + 8 * tileWidth,    
+                    bgY + 4 * tileHeight,
+                    1 * tileWidth,
+                    1 * tileHeight
+                }; 
+                obstacles[obstacleIndex++] = {
+                    bgX + 5 * tileWidth,    
+                    bgY + 6 * tileHeight,
+                    1 * tileWidth,
+                    1 * tileHeight
+                }; 
+                obstacles[obstacleIndex++] = {
+                    bgX + 10 * tileWidth,    
+                    bgY + 6 * tileHeight,
+                    1 * tileWidth,
+                    1 * tileHeight
+                }; 
+                break;
         }
     }
 }
@@ -831,7 +934,7 @@ void Level::Draw() {
         // This creates the effect of only cubes remaining after the level slides away
         int obstacleCount = GetObstacleCount();
         for (int i = 0; i < obstacleCount; i++) {
-            DrawRectangleLinesEx(obstacles[i], 2, BLANK);
+            DrawRectangleLinesEx(obstacles[i], 2, DARKBROWN);
         }
     }
     else {
@@ -841,7 +944,7 @@ void Level::Draw() {
         // Draw obstacle blocks on top of the background
         int obstacleCount = GetObstacleCount();
         for (int i = 0; i < obstacleCount; i++) {
-            DrawRectangleLinesEx(obstacles[i], 2, BLANK);
+            DrawRectangleLinesEx(obstacles[i], 2, DARKBROWN);
         }
     }
 }
@@ -879,7 +982,7 @@ Rectangle Level::GetObstacle(int index) const {
     if (currentLevel == 2) {
         maxIndex = 16;  // 8 boundary walls + 8 L-shaped inner obstacles
     } else if (currentLevel == 3) {
-        maxIndex = 12;  // 8 boundary walls + 4 diamond pattern obstacles
+        maxIndex = 12 + 12;  // 8 boundary walls + 4 diamond pattern obstacles
     } else if (currentLevel == 4) {
         maxIndex = 16;  // 8 boundary walls + 8 square perimeter obstacles
     } else if (currentLevel == 5) {
@@ -888,13 +991,13 @@ Rectangle Level::GetObstacle(int index) const {
         maxIndex = 18; 
     } else if (currentLevel == 7) {
         maxIndex = 12+4;  // 8 boundary walls + 4 horizontal bars
-    }else if (currentLevel  == 8 ){
-       maxIndex = 8+ 9 ; 
-    }
-    else if (currentLevel == 9 ){
-        maxIndex = 8+ 8 ; 
-    }
-     else {
+    } else if (currentLevel == 8) {
+       maxIndex = 8+ 9; 
+    } else if (currentLevel == 9) {
+        maxIndex = 8+ 8; 
+    } else if (currentLevel == 10) {
+        maxIndex = 8 + 8;  // 8 boundary walls + 8 boss level obstacles
+    } else {
         maxIndex = 8;   // Just boundary walls for other levels
     }
     
@@ -909,7 +1012,7 @@ int Level::GetObstacleCount() const {
     if (currentLevel == 2) {
         return 17;  // 8 boundary walls + 8 L-shaped inner obstacles + 1 extra
     } else if (currentLevel == 3) {
-        return 13;  // 8 boundary walls + 4 diamond pattern obstacles + 1 extra
+        return 13 + 12;  // 8 boundary walls + 4 diamond pattern obstacles + 1 extra
     } else if (currentLevel == 4) {
         return 17;  // 8 boundary walls + 8 square perimeter obstacles + 1 extra
     } else if (currentLevel == 5) {
@@ -918,12 +1021,13 @@ int Level::GetObstacleCount() const {
         return 19;  // 8 boundary walls + 10 scattered obstacles + 1 extra
     } else if (currentLevel == 7) {
         return 13+4;  // 8 boundary walls + 4 horizontal bars + 1 extra
-    }else if (currentLevel == 8){
-        return  8+ 9 +1; 
-    } else if (currentLevel ==9 ){
-        return 8 + 8 +1 ; 
-    }
-     else {
+    } else if (currentLevel == 8) {
+        return 8+ 9 +1; 
+    } else if (currentLevel == 9) {
+        return 8 + 8 +1; 
+    } else if (currentLevel == 10) {
+        return 8 + 8 + 1;  // 8 boundary walls + 8 boss obstacles + 1 extra
+    } else {
         return 9;   // Just the 8 boundary walls + 1 extra for other levels
     }
 }
@@ -974,6 +1078,9 @@ void Level::StartSwipeTransition(int nextLevelNumber) {
         } else if (nextLevelNumber >= 8 && nextLevelNumber <= 9) {
             sprintf(path1, "levels/Level_%d_1.png", nextLevelNumber);
             sprintf(path2, "levels/Level_%d_1.png", nextLevelNumber);
+        } else if (nextLevelNumber == 10) {
+            sprintf(path1, "levels/Boss_Level_1.png");
+            sprintf(path2, "levels/Boss_Level_1.png");
         } else {
             sprintf(path1, "levels/Level_%d.png", nextLevelNumber);
             sprintf(path2, "levels/Level_%d_2.png", nextLevelNumber);
@@ -1059,4 +1166,11 @@ Vector2 Level::GetPlayerTransitionPosition() const {
 
 bool Level::ShouldAnimatePlayer() const {
     return shouldAnimatePlayer && isSwipeTransition;
+}
+
+bool Level::IsObstaclePenetrable(int index) const {
+    if (index >= 0 && index < 50) {
+        return penetrableObstacles[index];
+    }
+    return false;
 }

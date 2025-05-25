@@ -7,7 +7,8 @@
 enum EnemyType {
     ENEMY_ORC,    // Levels 1-9
     ENEMY_OGRE,   // Levels 2-9
-    ENEMY_MUMMY   // Levels 4-9
+    ENEMY_MUMMY,  // Levels 4-9
+    ENEMY_BOSS    // Level 10 only
 };
 
 class Enemy : public Entity {
@@ -26,11 +27,29 @@ private:
     Vector2 beaverTarget;     // Position of the beaver being chased
     float beaverChaseRange;   // Range within which enemy will chase beaver
     
+    // Boss movement variables
+    Vector2 bossSpawnPos;     // Original spawn position for boss
+    float bossMovementRange;  // How far boss can move left/right from spawn
+    int bossDirection;        // 1 for right, -1 for left
+    
+    // Boss shooting variables
+    float bossRainTimer;      // Timer for boss rain gun intervals
+    float bossRainInterval;   // How often boss shoots rain bullets
+    
     // Static textures for all enemy types
     static Texture2D orcFrames[2];     // Shared textures for orc enemies
     static Texture2D ogreFrames[2];    // Shared textures for ogre enemies
     static Texture2D mummyFrames[2];   // Shared textures for mummy enemies
-
+    static Texture2D bossFrames[2];    // Shared textures for boss enemy
+    // Boss shooting variables
+    float bossShootTimer;     // Timer for boss shooting intervals
+    float bossShootInterval;  // How often boss shoots (in seconds)
+    float bossRailTimer;      // Timer for boss rail gun intervals
+    float bossRailInterval;   // How often boss shoots rail bullets
+    int bossRailBurstCount;   // How many bullets left in current burst
+    float bossRailBurstDelay; // Delay between bullets in burst
+    float bossRailBurstTimer; // Timer for burst bullets
+    bool bossRailBurstActive;
 public:
     Enemy();
     ~Enemy();
@@ -77,6 +96,18 @@ public:
     
     // Get health
     int GetHealth() const;
+    
+    // Boss shooting method - returns true if boss should shoot this frame
+    bool ShouldBossShoot(float deltaTime, Vector2 playerPos);
+    
+    // Get boss shoot direction toward player
+    Vector2 GetBossShootDirection(Vector2 playerPos) const;
+    
+    // Boss rain gun methods - returns true if boss should shoot rain bullets
+    bool ShouldBossShootRain(float deltaTime, Vector2 playerPos);
+    
+    // Get multiple rain bullet directions with spread
+    void GetRainBulletDirections(Vector2 playerPos, Vector2* directions, int bulletCount) const;
 };
 
 #endif // ENEMY_H

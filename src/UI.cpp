@@ -278,16 +278,15 @@ void UI::DrawHUD(int playerLives, int coinsCollected, int enemiesKilled, float t
     // Display level using multiple level balls
     float levelBallScale = 0.18f;
     float levelBallSpacing = 5.0f;  // Space between balls
-    float levelBallWidth = levelBallTexture.width * levelBallScale;
-    float startX = 20;
+    float levelBallHeight = levelBallTexture.height * levelBallScale;
+    float startX = GetScreenWidth() / 1.32f ;  
     float startY = 20;
 
     // Draw level balls up to current level
     for (int i = 0; i < currentLevel; i++) {
-        Vector2 ballPos = { startX + (levelBallWidth + levelBallSpacing) * i, startY };
+        Vector2 ballPos = { startX, startY + (levelBallHeight + levelBallSpacing) * i };
         DrawTextureEx(levelBallTexture, ballPos, 0.0f, levelBallScale, WHITE);
     }
-    
     // Display enemies killed
     char killsText[50];
     sprintf(killsText, "Enemies Killed: %d", enemiesKilled);
@@ -339,6 +338,7 @@ void UI::DrawHUD(int playerLives, int coinsCollected, int enemiesKilled, float t
             iconTexture = shotgunTexture;
         } else if (hasCoffeePowerUp) {
             iconTexture = coffeeTexture;
+            powerUpIconScale = 0.55f; // Larger scale for coffee cup
         } else if (hasNukePowerUp) {
             iconTexture = nukeTexture;
         }
@@ -371,6 +371,7 @@ void UI::DrawHUD(int playerLives, int coinsCollected, int enemiesKilled, float t
             iconTexture = shotgunTexture;
         } else if (coffeePowerUpActive) {
             iconTexture = coffeeTexture;
+            powerUpIconScale = 0.55f; // Larger scale for coffee cup when active
         }
         
         Vector2 iconPos = {
@@ -412,7 +413,7 @@ void UI::DrawShopItems(int gunUpgradeLevel, int bootUpgradeLevel, int boxUpgrade
     float verticalSpacing = 5.0f; // Space between vertically stacked items
     
     // Start from the bottom and calculate positions for stacking upward
-    Vector2 basePosition = {400, GetScreenHeight() - 40}; // Bottom position
+    Vector2 basePosition = {400, GetScreenHeight() - 40.0f}; // Bottom position
     Vector2 currentPosition = basePosition;
     
     // Draw box upgrade if purchased (bottom item)
