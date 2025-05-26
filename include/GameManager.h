@@ -29,6 +29,12 @@ private:
     float timeRemaining;
     float timeElapsed;
     
+    // Boss health bar variables
+    bool showBossHealthBar;
+    int bossMaxHealth;
+    int bossCurrentHealth;
+    Rectangle bossHealthBarBounds;
+    
     // Game objects
     Player player;
     Bullet bullets[MAX_BULLETS];
@@ -60,6 +66,14 @@ private:
     int maxLightningFrames;
     Vector2 bridgePosition;
     Vector2 bossDeathPosition;  // Store where the boss died
+    
+    // Boss introduction sequence variables
+    bool showBossIntro;
+    bool bossIntroComplete;
+    float bossIntroTimer;
+    float bossIntroDisplayDuration;
+    Texture2D bossTextTexture;
+    Vector2 bossTextPosition;
     
     // Bridge texture for boss defeat sequence
     Texture2D bridgeTexture;
@@ -107,6 +121,8 @@ private:
     Sound startSound;
     Sound enemyHitSound;  // Add enemy hit sound
     Music backgroundMusic;
+    Music overworldMusic;  // Add second music for levels 5-9
+    Music bossMusic;
     static const int MAX_BEAVERS = 3;
 Beaver beavers[MAX_BEAVERS];
 float beaverSpawnTimer;
@@ -128,6 +144,8 @@ std::vector<Vector2> GenerateBeaverPath() const;
     void UpdateLevelCompleted(float deltaTime);
     void UpdateMenu(float deltaTime);
     void UpdateIntro(float deltaTime);
+        
+    void SwitchMusicForLevel(int levelNumber);  // Add this line
     
     void DrawPlaying();
     
@@ -152,6 +170,20 @@ std::vector<Vector2> GenerateBeaverPath() const;
     void DisplayBridge();
     void UpdateTrophy(float deltaTime);
     void DrawBossDefeatEffects();
+    
+    // Boss introduction sequence methods
+    void StartBossIntroduction();
+    void UpdateBossIntroduction(float deltaTime);
+    void DrawBossIntroduction();
+    
+    // Boss health bar methods
+    void InitBossHealthBar();
+    void UpdateBossHealthBar();
+    void DrawBossHealthBar();
+    
+    // Bridge gap management for level 10
+    void RemoveBridgeGapObstacle();
+    bool HasBridgeGapObstacle() const;
     
 public:
     GameManager();

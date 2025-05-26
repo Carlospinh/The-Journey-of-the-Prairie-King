@@ -8,7 +8,7 @@ UI::UI()
     fadingIn(true),
     fadingOut(false),
     introTimer(0.0f),
-    introDuration(2.0f),
+    introDuration(6.0f),
     currentGameState(INTRO_1) {
 }
 

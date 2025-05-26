@@ -118,6 +118,10 @@ public:
     
     // Check if obstacle is penetrable by bullets
     bool IsObstaclePenetrable(int index) const;
+    
+    // Bridge gap management for level 10
+    void RemoveBridgeGapObstacle();
+    bool HasBridgeGapObstacle() const;
 };
 
 #endif // LEVEL_H

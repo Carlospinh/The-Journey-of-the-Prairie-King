@@ -1,4 +1,4 @@
-#include "../include/GameManager.h"
+﻿#include "../include/GameManager.h"
 #include <stdio.h>
 
 GameManager::GameManager()
@@ -6,6 +6,10 @@ GameManager::GameManager()
       isMusicPlaying(false),
       timeRemaining(60.0f),
       timeElapsed(0.0f),
+      showBossHealthBar(false),
+      bossMaxHealth(6),
+      bossCurrentHealth(6),
+      bossHealthBarBounds({0, 0, 0, 0}),
       enemiesKilled(0),
       coinsCollected(0),
       wheelPowerUpOnField(false),
@@ -42,6 +46,12 @@ GameManager::GameManager()
       maxLightningFrames(8),
       bridgePosition({0, 0}),
       bossDeathPosition({0, 0}),  // Initialize boss death position
+      // Boss introduction sequence initialization
+      showBossIntro(false),
+      bossIntroComplete(false),
+      bossIntroTimer(0.0f),
+      bossIntroDisplayDuration(3.0f),
+      bossTextPosition({0, 0}),
       // Player exit animation initialization
       playerExiting(false),
       playerExitTimer(0.0f),
@@ -74,10 +84,20 @@ void GameManager::InitGame()
 
     backgroundMusic = LoadMusicStream("resources/BKMusic/TheOutlaw.mp3");
     backgroundMusic.looping = true;
+    overworldMusic = LoadMusicStream("resources/Audio/Sounds/Overworld.mp3");
+    overworldMusic.looping = true;
+    
+    bossMusic = LoadMusicStream("resources/Audio/Sounds/Boss Battle Theme - Level 5&10.mp3");
+    bossMusic.looping = true;
+
+
     trophyTexture = LoadTexture("resources/Boss Battle/Trophy/Trophy.png");
     
     // Load bridge texture for boss defeat sequence
     bridgeTexture = LoadTexture("resources/Boss Battle/Puente/Puente.png");
+    
+    // Load boss text texture for boss introduction
+    bossTextTexture = LoadTexture("resources/Boss Battle/Boss Text/Text.png");
     
     Bullet::LoadSharedTexture();
     Enemy::LoadSharedTextures();
@@ -149,6 +169,7 @@ void GameManager::ResetGame()
     StopMusicStream(backgroundMusic);
     PlayMusicStream(backgroundMusic);
     SetMusicVolume(backgroundMusic, 0.5f);
+    SwitchMusicForLevel(1);
     isMusicPlaying = true;
 
     player.PlayHiAnimation();
@@ -166,16 +187,49 @@ void GameManager::CloseGame()
     Enemy::UnloadSharedTextures();
     Coin::UnloadSharedResources();
     PowerUp::UnloadSharedResources();
+    StopMusicStream(overworldMusic);
+    UnloadMusicStream(overworldMusic);
     
+    StopMusicStream(bossMusic);
+    UnloadMusicStream(bossMusic);
     UnloadTexture(trophyTexture);
     UnloadTexture(bridgeTexture); // Unload bridge texture
+    UnloadTexture(bossTextTexture); // Unload boss text texture
     Beaver::UnloadSharedResources();
     ui.UnloadResources();
 
     CloseAudioDevice();
     CloseWindow();
 }
-
+void GameManager::SwitchMusicForLevel(int levelNumber) {
+    // Stop all music
+    if (IsMusicStreamPlaying(backgroundMusic)) {
+        StopMusicStream(backgroundMusic);
+    }
+    if (IsMusicStreamPlaying(overworldMusic)) {
+        StopMusicStream(overworldMusic);
+    }
+    if (IsMusicStreamPlaying(bossMusic)) {
+        StopMusicStream(bossMusic);
+    }
+    
+    // Play appropriate music based on level
+    if (levelNumber >= 1 && levelNumber <= 4) {
+        // Levels 1-4: TheOutlaw.mp3
+        PlayMusicStream(backgroundMusic);
+        SetMusicVolume(backgroundMusic, 0.5f);
+    } else if (levelNumber >= 5 && levelNumber <= 9) {
+        // Levels 5-9: Overworld.mp3
+        PlayMusicStream(overworldMusic);
+        SetMusicVolume(overworldMusic, 0.5f);
+    } else if (levelNumber == 10) {
+        // Level 10: Boss Battle Theme
+        PlayMusicStream(bossMusic);
+        SetMusicVolume(bossMusic, 0.5f);
+    }
+    
+    isMusicPlaying = true;
+}
 void GameManager::Update()
 {
     float deltaTime = GetFrameTime();
@@ -324,7 +378,17 @@ void GameManager::UpdatePlaying(float deltaTime)
         ui.SetGameState(GAME_OVER);
         return;
     }
-
+    if (isMusicPlaying)
+    {
+        // Update whichever music is currently playing
+        if (IsMusicStreamPlaying(backgroundMusic)) {
+            UpdateMusicStream(backgroundMusic);
+        } else if (IsMusicStreamPlaying(overworldMusic)) {
+            UpdateMusicStream(overworldMusic);
+        } else if (IsMusicStreamPlaying(bossMusic)) {
+            UpdateMusicStream(bossMusic);
+        }
+    }
     // Handle player exit animation after trophy pickup
     if (playerExiting) {
         playerExitTimer += deltaTime;
@@ -370,27 +434,57 @@ void GameManager::UpdatePlaying(float deltaTime)
     {
         timeRemaining = 0;
 
+        // --- Activa la tienda solo en niveles 2,4,6,8 y s�lo si no est� activa ni activada antes ---
+        if ((level.GetCurrentLevel() == 2 || level.GetCurrentLevel() == 4 ||
+            level.GetCurrentLevel() == 6 || level.GetCurrentLevel() == 8) &&
+            !shop.IsActive() && !shopActivated)
+        {
+            shopActivated = true;
+            shop.Activate(coinsCollected, &player);
+        }
+        else if (!level.IsCompleted() && !shop.IsActive() && !shopActivated)
+        {
+            // Si no hay tienda en este nivel, marcar como completado directamente
+            level.SetCompleted();
+            shopCompletedThisLevel = true;
+        }
+
+        // Para nivel 10 ir directo a LEVEL_COMPLETED sin tienda
         if (level.GetCurrentLevel() == 10)
         {
             ui.SetGameState(LEVEL_COMPLETED);
             return;
         }
+    }
 
-        if ((/*level.GetCurrentLevel() == 1 ||*/ level.GetCurrentLevel() == 2 || level.GetCurrentLevel() == 4 || level.GetCurrentLevel() == 6 || level.GetCurrentLevel() == 8) && !shopActivated && !shop.IsActive() && shop.IsShopAvailableForLevel(level.GetCurrentLevel()) && !shopCompletedThisLevel)
+    // --- Actualiza la tienda si est� activa ---
+    if (shop.IsActive())
+    {
+        shop.Update(deltaTime);
+        shop.CheckItemPickup(player.GetCollisionRect());
+
+        if (!shop.IsActive() && shopActivated)
         {
-            shopActivated = true;
-            shop.Activate(coinsCollected, &player);
-        }
+            coinsCollected = shop.GetRemainingCoins();
+            shop.MarkShopCompletedForLevel(level.GetCurrentLevel());
+            shopCompletedThisLevel = true;
 
-        if (!level.IsCompleted())
-        {
-            level.SetCompleted();
+            if (!level.IsCompleted())
+            {
+                level.SetCompleted();
+            }
         }
+    }
 
+    // --- Solo si el nivel est� completado y no hay transici�n ni tienda activa,
+    //      verifica si el jugador est� en zona de salida para iniciar transici�n ---
+    if (level.IsCompleted() && !level.IsTransitioning() &&
+        !shop.IsActive() && shopCompletedThisLevel)
+    {
         Rectangle playerRect = player.GetCollisionRect();
         if (level.IsPlayerInExitZone(playerRect))
         {
-            // Clear enemies, death animations, powerups, and coins before transition
+            // Limpia elementos antes de la transici�n
             for (int i = 0; i < MAX_ENEMIES; i++)
                 enemies[i].SetActive(false);
             for (int i = 0; i < MAX_DEATH_ANIMATIONS; i++)
@@ -398,76 +492,25 @@ void GameManager::UpdatePlaying(float deltaTime)
             for (int i = 0; i < MAX_COINS; i++)
                 coins[i].SetActive(false);
             for (int i = 0; i < MAX_POWERUPS; i++)
-            {
-                PowerUpType type = powerUps[i].GetType();
                 powerUps[i].SetActive(false);
-                // Reset powerup flags
-                switch (type)
-                {
-                case POWERUP_WHEEL:
-                    wheelPowerUpOnField = false;
-                    break;
-                case POWERUP_SHOTGUN:
-                    shotgunPowerUpOnField = false;
-                    break;
-                case POWERUP_COFFEE:
-                    coffeePowerUpOnField = false;
-                    break;
-                case POWERUP_NUKE:
-                    nukePowerUpOnField = false;
-                    break;
-                case POWERUP_LIFE:
-                    lifePowerUpOnField = false;
-                    break;
-                }
-            }
 
-            // Use the new swipe transition instead of old transition
-            int currentLevel = level.GetCurrentLevel();
-            int nextLevel = currentLevel + 1;
-            if (nextLevel > 10)
-                nextLevel = 1;
-
-            // Set up player transition animation
             Vector2 currentPlayerPos = player.GetPosition();
             Rectangle nextLevelBounds = level.GetLevelBounds();
             Vector2 targetPlayerPos = {
-                nextLevelBounds.x + nextLevelBounds.width / 2,     // Center horizontally
-                nextLevelBounds.y + nextLevelBounds.height * 0.15f // Near top (15% from top)
+                nextLevelBounds.x + nextLevelBounds.width / 2,
+                nextLevelBounds.y + nextLevelBounds.height * 0.15f
             };
 
             level.SetPlayerTransition(currentPlayerPos, targetPlayerPos);
-            level.StartSwipeTransition(nextLevel);
+            level.StartSwipeTransition(level.GetCurrentLevel() + 1);
         }
     }
 
-    if (shop.IsActive())
-    {
-        shop.Update(deltaTime);
-
-        // Check for item pickup collision instead of E key interaction
-        if (shop.CheckItemPickup(player.GetCollisionRect()))
-        {
-            // Item was picked up, coins will be updated when shop deactivates
-        }
-
-        // Update player coins after shop interaction is complete
-        if (!shop.IsActive() && shopActivated)
-        {
-            coinsCollected = shop.GetRemainingCoins();
-            shop.MarkShopCompletedForLevel(level.GetCurrentLevel());
-            shopCompletedThisLevel = true;
-            shopActivated = false;
-        }
-
-        // Update shop purchase notifications even when shop is not active
-    }
-
+    // --- Actualiza la transici�n si est� activa ---
     if (level.IsTransitioning())
     {
         level.Update(deltaTime);
 
-        // Animate player during swipe transition
         if (level.ShouldAnimatePlayer())
         {
             Vector2 interpolatedPos = level.GetPlayerTransitionPosition();
@@ -486,7 +529,9 @@ void GameManager::UpdatePlaying(float deltaTime)
 
             level.LoadResources(nextLevel);
             timeRemaining = 60.0f;
+            shopActivated = false;
             shopCompletedThisLevel = false;
+
             for (int i = 0; i < MAX_ENEMIES; i++)
                 enemies[i].SetActive(false);
             for (int i = 0; i < MAX_BULLETS; i++)
@@ -496,12 +541,10 @@ void GameManager::UpdatePlaying(float deltaTime)
             for (int i = 0; i < MAX_POWERUPS; i++)
                 powerUps[i].SetActive(false);
 
-            // Position player near the top of the new level
             Rectangle bounds = level.GetLevelBounds();
             float playerX = bounds.x + bounds.width / 2;
             float playerY = bounds.y + bounds.height * 0.15f;
-            player.SetPosition({playerX, playerY});
-            return;
+            player.SetPosition({ playerX, playerY });
         }
     }
 
@@ -569,14 +612,53 @@ void GameManager::UpdatePlaying(float deltaTime)
 
     if (timeRemaining > 0 && !level.IsTransitioning())
     {
-        enemySpawnTimer += deltaTime;
-        if (enemySpawnTimer >= enemySpawnInterval)
-        {
-            enemySpawnTimer = 0.0f;
-            SpawnEnemy();
+        // For level 10, handle boss introduction and spawning
+        if (level.GetCurrentLevel() == 10) {
+            bool bossExists = false;
+            for (int i = 0; i < MAX_ENEMIES; i++) {
+                if (enemies[i].GetType() == ENEMY_BOSS) {
+                    bossExists = true;
+                    break;
+                }
+            }
+            
+            if (!bossExists) {
+                // Spawn boss immediately when level 10 starts
+                SpawnEnemy();
+                // Then start introduction animation
+                StartBossIntroduction();
+                // Initialize boss health bar when boss is spawned
+                InitBossHealthBar();
+            }
+            
+            // Update boss introduction animation
+            if (showBossIntro) {
+                UpdateBossIntroduction(deltaTime);
+                // During introduction, update boss but don't let it move or shoot
+                for (int i = 0; i < MAX_ENEMIES; i++) {
+                    if (enemies[i].IsActive() && enemies[i].GetType() == ENEMY_BOSS) {
+                        enemies[i].SetFrozen(true); // Freeze boss during introduction
+                    }
+                }
+                return; // Don't process other game logic during introduction
+            } else if (bossIntroComplete) {
+                // After introduction, unfreeze the boss
+                for (int i = 0; i < MAX_ENEMIES; i++) {
+                    if (enemies[i].IsActive() && enemies[i].GetType() == ENEMY_BOSS) {
+                        enemies[i].SetFrozen(false); // Unfreeze boss after introduction
+                    }
+                }
+            }
+        } else {
+            // Normal enemy spawning logic for levels 1-9
+            enemySpawnTimer += deltaTime;
+            if (enemySpawnTimer >= enemySpawnInterval)
+            {
+                enemySpawnTimer = 0.0f;
+                SpawnEnemy();
+            }
         }
     }
-
     if (timeRemaining > 0 && !level.IsTransitioning())
     {
         beaverSpawnTimer += deltaTime;
@@ -847,6 +929,11 @@ void GameManager::UpdatePlaying(float deltaTime)
     if (bossDefeated) {
         UpdateBossDefeatSequence(deltaTime);
     }
+    
+    // Update boss health bar if in level 10
+    if (level.GetCurrentLevel() == 10) {
+        UpdateBossHealthBar();
+    }
 }
 
 void GameManager::UpdateGameOver(float deltaTime)
@@ -902,6 +989,8 @@ void GameManager::SpawnEnemy()
                     
                     // Boss scale decreased by 30% (0.2f * 0.7 = 0.14f)
                     enemies[i].Init(bossSpawnPos, 0.14f, finalSpeed, ENEMY_BOSS);
+
+                    enemySpawnTimer = 0.0f;
                     break;
                 }
             }
@@ -1387,6 +1476,16 @@ void GameManager::DrawPlaying()
         DrawRectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, Fade(WHITE, alpha));
     }
 
+    // Draw boss introduction animation if active
+    if (showBossIntro) {
+        DrawBossIntroduction();
+    }
+    
+    // Draw boss health bar if in level 10
+    if (level.GetCurrentLevel() == 10) {
+        DrawBossHealthBar();
+    }
+
     DrawBossDefeatSequence();
 }
 
@@ -1432,6 +1531,9 @@ void GameManager::HandleBossDefeat(Vector2 bossPosition) {
     playingLightning = false;
     showBridge = false;
     trophySpawned = false;
+    
+    // Remove the bridge gap obstacle to create the bridge passage
+    level.RemoveBridgeGapObstacle();
     
     // Set up bridge position (center of level)
     Rectangle bounds = level.GetLevelBounds();
@@ -1572,4 +1674,176 @@ void GameManager::PlayLightningAnimation() {
 
 void GameManager::DisplayBridge() {
     showBridge = true;
+}
+
+// Boss introduction sequence methods
+void GameManager::StartBossIntroduction() {
+    showBossIntro = true;
+    bossIntroComplete = false;
+    bossIntroTimer = 0.0f;
+    
+    // Position the boss text above the boss spawn location
+    Rectangle bounds = level.GetLevelBounds();
+    float tileWidth = bounds.width / 16.0f;
+    float tileHeight = bounds.height / 16.0f;
+    
+    // Position text above boss spawn position (row 13, column 8)
+    bossTextPosition = {
+        bounds.x + 8 * tileWidth - (bossTextTexture.width * 0.15f) / 2,  // Center horizontally on boss
+        bounds.y + 10 * tileHeight  // Above the boss (row 10 instead of 13)
+    };
+}
+
+void GameManager::UpdateBossIntroduction(float deltaTime) {
+    if (!showBossIntro) return;
+    
+    bossIntroTimer += deltaTime;
+    
+    if (bossIntroTimer >= bossIntroDisplayDuration) {
+        showBossIntro = false;
+        bossIntroComplete = true;
+        
+        // Now spawn the boss after introduction is complete
+        SpawnEnemy();
+    }
+}
+
+void GameManager::DrawBossIntroduction() {
+    if (!showBossIntro) return;
+    
+    // Draw the boss text image with scaling and fade-in effect
+    float alpha = 1.0f;
+    
+    // Optional: Add fade-in effect in first 0.5 seconds
+    if (bossIntroTimer < 0.5f) {
+        alpha = bossIntroTimer / 0.5f;
+    }
+    // Optional: Add fade-out effect in last 0.5 seconds
+    else if (bossIntroTimer > bossIntroDisplayDuration - 0.5f) {
+        alpha = (bossIntroDisplayDuration - bossIntroTimer) / 0.5f;
+    }
+    
+    // Draw the boss text texture with scaling (0.3x scale for appropriate size)
+    DrawTextureEx(bossTextTexture, bossTextPosition, 0.0f, 0.15f, Fade(WHITE, alpha));
+}
+
+// Boss health bar methods
+void GameManager::InitBossHealthBar() {
+    showBossHealthBar = true;
+    
+    // Get the actual boss health dynamically from the spawned boss
+    bossMaxHealth = 50;  // Default fallback
+    bossCurrentHealth = 50;  // Default fallback
+    
+    // Find the boss and get its actual health
+    for (int i = 0; i < MAX_ENEMIES; i++) {
+        if (enemies[i].IsActive() && enemies[i].GetType() == ENEMY_BOSS) {
+            bossMaxHealth = enemies[i].GetHealth();
+            bossCurrentHealth = enemies[i].GetHealth();
+            break;
+        }
+    }
+    
+    // Position health bar at the bottom center of screen, not spanning full map width
+    float barWidth = SCREEN_WIDTH * 0.8f;  // 80% of screen width for better fit
+    float barHeight = 30.0f;
+    
+    bossHealthBarBounds = {
+        (SCREEN_WIDTH - barWidth) / 2,    // Center horizontally on screen
+        SCREEN_HEIGHT - barHeight - 20,   // Bottom of screen with 20px margin
+        barWidth,                         // 80% of screen width
+        barHeight
+    };
+}
+
+void GameManager::UpdateBossHealthBar() {
+    if (!showBossHealthBar) return;
+    
+    // Find the boss and get its current health
+    for (int i = 0; i < MAX_ENEMIES; i++) {
+        if (enemies[i].IsActive() && enemies[i].GetType() == ENEMY_BOSS) {
+            bossCurrentHealth = enemies[i].GetHealth();
+            
+            // Check if boss health reached zero
+            if (bossCurrentHealth <= 0) {
+                // Boss has died - immediately change map and remove obstacle
+                Vector2 bossPosition = enemies[i].GetPosition();
+                enemies[i].SetActive(false); // Deactivate the boss
+                
+                
+                
+                // Store boss death position for trophy spawning
+                bossDeathPosition = bossPosition;
+                
+                // Set flag that boss is defeated but don't start full sequence yet
+                bossDefeated = true;
+                showBossHealthBar = false; // Hide health bar immediately
+            }
+            return;
+        }
+    }
+    
+    // If no boss is found, hide the health bar
+    showBossHealthBar = false;
+    level.RemoveBridgeGapObstacle(); // Remove the middle obstacle
+    // Immediately change map texture and remove bridge gap obstacle
+    level.SetCompleted(); // Change to Boss_Level_Completed_1.png
+
+}
+
+void GameManager::DrawBossHealthBar() {
+    if (!showBossHealthBar || bossCurrentHealth <= 0) return;
+    
+    // Calculate health percentage
+    float healthPercentage = (float)bossCurrentHealth / (float)bossMaxHealth;
+    
+    // Draw background (black border)
+    DrawRectangleRec(bossHealthBarBounds, BLACK);
+    
+    // Draw health bar background (dark red)
+    Rectangle innerBounds = {
+        bossHealthBarBounds.x + 2,
+        bossHealthBarBounds.y + 2,
+        bossHealthBarBounds.width - 4,
+        bossHealthBarBounds.height - 4
+    };
+    DrawRectangleRec(innerBounds, DARKGRAY);
+    
+    // Draw current health (bright red)
+    Rectangle healthBounds = {
+        innerBounds.x,
+        innerBounds.y,
+        innerBounds.width * healthPercentage,
+        innerBounds.height
+    };
+    
+    // Use different colors based on health level
+    Color healthColor = RED;
+    if (healthPercentage > 0.6f) {
+        healthColor = RED;
+    } else if (healthPercentage > 0.3f) {
+        healthColor = ORANGE;
+    } else {
+        healthColor = MAROON;  // Dark red when low health
+    }
+    
+    DrawRectangleRec(healthBounds, healthColor);
+    
+    // Draw boss name text above the health bar
+    const char* bossText = "BOSS";
+    int textWidth = MeasureText(bossText, 24);
+    DrawText(bossText, 
+             (SCREEN_WIDTH - textWidth) / 2, 
+             (int)bossHealthBarBounds.y - 30, 
+             24, 
+             WHITE);
+}
+
+// Bridge gap management for level 10
+void GameManager::RemoveBridgeGapObstacle() {
+    level.RemoveBridgeGapObstacle();
+}
+
+bool GameManager::HasBridgeGapObstacle() const {
+    return level.HasBridgeGapObstacle();
 }

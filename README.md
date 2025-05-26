@@ -1,58 +1,78 @@
 # 🌾 Journey of the Prairie King
 
-**Journey of the Prairie King** es un **minijuego arcade** inspirado en *Stardew Valley*, donde encarnas a un **valiente pistolero del Viejo Oeste** enfrentando oleadas de enemigos en niveles llenos de acción, con power-ups, monedas, y mejoras. Su estética retro en pixel art y su jugabilidad trepidante lo hacen una experiencia divertida y desafiante.
+**Journey of the Prairie King** is a minigame featured in **Stardew Valley**. Players take on the role of a **gunslinger fighting waves** of enemies across different levels, using power-ups and upgrades to survive. With retro pixel-art graphics and a Wild West theme, it offers an arcade-style experience within the main game.
 
-🎮 ¡Prepárate para sobrevivir en el Lejano Oeste digital!
+
+🎮 **¡Prepare to survive in the far digital west!** 
 
 ---
 
-## 📹 Demostración en Video
+## 📹 Demostration in Video
 
 [![Watch the video](https://img.youtube.com/vi/z6JdWGjZ4yo/0.jpg)](https://youtu.be/z6JdWGjZ4yo)
 
 ---
 
-## 🚀 Cómo Jugar
+## ⚠️ How to Run the Game Properly
 
-### 🖥️ PC
-- **Moverse:** `W` `A` `S` `D`
-- **Disparar:** Flechas (`↑`, `↓`, `←`, `→`)
-- **Usar objeto:** `Espacio`
+To ensure the executable (`.exe`) works correctly and all graphic and level resources are loaded, it **must be executed from the original root folder of the project**, where the `resources/` and `levels/` folders are located.
 
-### 🎮 Consola
-- **Moverse:** Joystick izquierdo o D-pad
-- **Disparar:** Joystick derecho o botones `A/B/X/Y` (`Triángulo`, `Círculo`, `Cruz`, `Cuadrado` en PlayStation)
-- **Usar objeto:** `R2`
+If you wish to move the `.exe` to another location, make sure to **also copy the `resources/` and `levels/` folders into the same directory**. The minimum required structure should look like this:
+```
+📁 YourChosenFolder
+├── The-Journey-of-the-Prairie-King.exe
+├── resources/
+└── levels/
+```
 
-### 📱 Móvil
-- **Moverse:** Círculo transparente izquierdo
-- **Disparar:** Círculo transparente derecho
-- **Usar objeto:** Botón de uso
+Otherwise, images and other resources will not load properly and the game may not display correctly.
 
 ---
 
-## 🧩 Características Principales
+🚀**How to Play:**
+🖥️ **PC**
+**Move:** W A S D
+**Shoot:** Arrow keys (↑, ↓, ←, →)
+**Use item:** Spacebar
 
-El juego está organizado en distintos **managers** que controlan aspectos clave:
+🎮 **Console**
+**Move: **Left joystick or D-pad
+**Shoot:** Right joystick or A/B/X/Y buttons (Triangle, Circle, Cross, Square on PlayStation)
+**Use item:** R2
 
-- 🎮 `Game`: Control principal del flujo del juego  
-- 🧍 `Player`: Movimiento, disparo y control del jugador  
-- 👹 `EnemyManager`: Generación y control de enemigos  
-- 🔫 `BulletManager`: Gestión de balas del jugador y enemigos  
-- 🪙 `CoinManager`: Aparición y recolección de monedas  
-- ⚡ `PowerUpManager`: Power-ups con habilidades especiales  
-- 🖼️ `UiManager`: Interfaz de usuario y HUD  
-- 🎬 `IntroManager`: Animaciones y pantalla de introducción  
-- 📈 `LevelManager`: Progresión entre niveles  
-- 🔊 `SoundManager`: Música y efectos de sonido  
-- 📦 `ResourceManager`: Carga y gestión de recursos gráficos y de audio  
+📱 **Mobile**
+**Move:** Left transparent circle
+**Shoot:** Right transparent circle
+**Use item:** Use button
 
 ---
 
-## 👥 Desarrolladores
+## 🧩 Main Features
+
+The game is organized by **managers** that controls the main bulletpoints:
+
+* 🎮 `Game`: Main control of the game flow
+* 🧍 `Player`: Player movement, shooting, and control
+* 👹 `EnemyManager`: Enemy spawning and control
+* 🔫 `BulletManager`: Management of player and enemy bullets
+* 🪙 `CoinManager`: Coin spawning and collection
+* ⚡ `PowerUpManager`: Power-ups with special abilities
+* 🖼️ `UiManager`: User interface and HUD
+* 🎬 `IntroManager`: Animations and intro screen
+* 📈 `LevelManager`: Level progression
+* 🔊 `SoundManager`: Music and sound effects
+* 📦 `ResourceManager`: Loading and management of graphic and audio resources
+
+
+---
+
+## 👥 Developers
 
 - 👨‍💻 [Marc Pladellorens Pérez](https://github.com/MarcPladellorensPerez)  
 - 👨‍💻 [Ismael El Khassal Garnan](https://github.com/ismaelkhassal)  
 - 👨‍💻 [Carlos Pinheiro Carrión](https://github.com/Carlospinh)  
 
-📁 Repositorio del proyecto: [**The Journey of the Prairie King**](https://github.com/Carlospinh/The-Journey-of-the-Prairie-King)
+📁 Repository of the project: [**The Journey of the Prairie King**](https://github.com/Carlospinh/The-Journey-of-the-Prairie-King)
+
+UML Class Diagram | The Journey of the Prairie King:
+<image src="resources/Class Diagram UML_ The J.png" alt="Class Diagram UML of the Game">

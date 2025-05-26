@@ -31,7 +31,8 @@ Enemy::Enemy()
     bossRailBurstCount(0),
     bossRailBurstDelay(0.1f),
     bossRailBurstTimer(0.0f),
-    bossRailBurstActive(false)
+    bossRailBurstActive(false),
+    frozen(false)
     {
 }
 
@@ -67,7 +68,13 @@ void Enemy::UnloadSharedTextures() {
     UnloadTexture(bossFrames[0]);
     UnloadTexture(bossFrames[1]);
 }
+void Enemy::SetFrozen(bool isFrozen) {
+    frozen = isFrozen;
+}
 
+bool Enemy::IsFrozen() const {
+    return frozen;
+}
 void Enemy::Init(Vector2 position, float scale, float speed, EnemyType enemyType) {
     this->position = position;
     this->scale = scale;
@@ -97,7 +104,7 @@ void Enemy::Init(Vector2 position, float scale, float speed, EnemyType enemyType
         case ENEMY_BOSS:
             this->speed = speed * 1.2f;      // Same speed as mummy
             this->frameDuration = 0.15f;     // Same animation speed as mummy
-            this->health = 6;                // Same health as mummy
+            this->health = 10;                // Same health as mummy
             this->bossSpawnPos = position;   // Store spawn position for horizontal movement
             this->bossMovementRange = 300.0f; // Boss can move 300 pixels left/right from spawn
             this->bossDirection = 1;         // Start moving right
@@ -127,7 +134,11 @@ void Enemy::Init(Vector2 position, float scale, float speed, EnemyType enemyType
 
 void Enemy::Update(float deltaTime) {
     if (!active) return;
-    
+    if (frozen) {
+        // Only update animation if needed, but don't move or shoot
+        // You can still update sprite animation here if desired
+        return;
+    }
     // Update hit flash effect
     if (hitFlashTime > 0.0f) {
         hitFlashTime -= deltaTime;
