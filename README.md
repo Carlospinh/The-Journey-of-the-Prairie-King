@@ -58,4 +58,4 @@ El juego está organizado en distintos **managers** que controlan aspectos clave
 📁 Repositorio del proyecto: [**The Journey of the Prairie King**](https://github.com/Carlospinh/The-Journey-of-the-Prairie-King)
 
 UML Class Diagram | The Journey of the Prairie King:
-<image src="/Class Diagram UML_ The J.png" alt="Class Diagram UML of the Game">
+<image src="resources/Class Diagram UML_ The J.png" alt="Class Diagram UML of the Game">
