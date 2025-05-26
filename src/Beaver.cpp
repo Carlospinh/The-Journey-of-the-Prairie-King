@@ -9,7 +9,7 @@ Beaver::Beaver()
     : position({0, 0}),
       active(false),
       speed(200.0f), 
-      scale(0.20f),
+      scale(0.15f),
       frameWidth(16.0f),
       frameHeight(16.0f),
       currentFrame(0),
