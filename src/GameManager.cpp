@@ -67,7 +67,7 @@ GameManager::~GameManager()
 void GameManager::InitGame()
 {
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Journey of the Prairie King");
-    ToggleFullscreen();
+    //ToggleFullscreen();
     SetTargetFPS(60);
 
     InitAudioDevice();
