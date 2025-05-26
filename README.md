@@ -13,6 +13,22 @@
 
 ---
 
+## ⚠️ How to Run the Game Properly
+
+To ensure the executable (`.exe`) works correctly and all graphic and level resources are loaded, it **must be executed from the original root folder of the project**, where the `resources/` and `levels/` folders are located.
+
+If you wish to move the `.exe` to another location, make sure to **also copy the `resources/` and `levels/` folders into the same directory**. The minimum required structure should look like this:
+```
+📁 YourChosenFolder
+├── The-Journey-of-the-Prairie-King.exe
+├── resources/
+└── levels/
+```
+
+Otherwise, images and other resources will not load properly and the game may not display correctly.
+
+---
+
 🚀**How to Play:**
 🖥️ **PC**
 **Move:** W A S D
