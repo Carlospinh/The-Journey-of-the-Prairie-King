@@ -100,9 +100,9 @@ void Shop::InitializeItems() {
     int bootLevel = player->getBootUpgradeLevel();
     int boxLevel = player->GetBoxUpgradeLevel();
     
-    int gunPrice = (gunLevel == 0) ? 10 : ((gunLevel == 1) ? 20 : 30);
-    int bootPrice = (bootLevel == 0) ? 8 : 20;
-    int boxPrice = (boxLevel == 0) ? 15 : ((boxLevel == 1) ? 30 : 45);
+    int gunPrice = (gunLevel == 0) ? 10 : ((gunLevel == 1) ? 25 : 50);
+    int bootPrice = (bootLevel == 0) ? 15 : 30;
+    int boxPrice = (boxLevel == 0) ? 20 : ((boxLevel == 1) ? 35 : 60);
     
     items[0] = {SHOP_GUN, gunTextures[gunLevel < 3 ? gunLevel : 2], 
                 "Gun Upgrade", "Increases damage", gunPrice, gunLevel + 1, false};

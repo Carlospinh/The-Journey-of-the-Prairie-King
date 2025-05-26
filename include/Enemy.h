@@ -50,10 +50,12 @@ private:
     float bossRailBurstDelay; // Delay between bullets in burst
     float bossRailBurstTimer; // Timer for burst bullets
     bool bossRailBurstActive;
+    bool frozen;
 public:
     Enemy();
     ~Enemy();
-    
+    void SetFrozen(bool isFrozen);
+    bool IsFrozen() const;
     // Static methods for shared resources
     static void LoadSharedTextures();
     static void UnloadSharedTextures();

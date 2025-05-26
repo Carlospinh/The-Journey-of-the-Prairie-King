@@ -732,6 +732,16 @@ void Level::LoadResources(int levelNumber) {
                 penetrableObstacles[obstacleIndex] = true;  // This is penetrable by bullets
                 obstacleIndex++;
                 
+                // Bridge gap obstacle - blocks the gap between the two penetrable obstacles
+                obstacles[obstacleIndex] = {
+                    bgX + 8 * tileWidth,    // Gap position (column 8)
+                    bgY + 8 * tileHeight,   // Middle row
+                    1 * tileWidth,          // 1x1 block
+                    1 * tileHeight
+                };
+                penetrableObstacles[obstacleIndex] = false;  // This is solid initially
+                obstacleIndex++;
+                
                 obstacles[obstacleIndex] = {
                     bgX + 9 * tileWidth,    // Right pillar
                     bgY + 8 * tileHeight,
@@ -934,7 +944,7 @@ void Level::Draw() {
         // This creates the effect of only cubes remaining after the level slides away
         int obstacleCount = GetObstacleCount();
         for (int i = 0; i < obstacleCount; i++) {
-            DrawRectangleLinesEx(obstacles[i], 2, DARKBROWN);
+            DrawRectangleLinesEx(obstacles[i], 2, BLANK);
         }
     }
     else {
@@ -944,7 +954,7 @@ void Level::Draw() {
         // Draw obstacle blocks on top of the background
         int obstacleCount = GetObstacleCount();
         for (int i = 0; i < obstacleCount; i++) {
-            DrawRectangleLinesEx(obstacles[i], 2, DARKBROWN);
+            DrawRectangleLinesEx(obstacles[i], 2, BLANK);
         }
     }
 }
@@ -996,7 +1006,7 @@ Rectangle Level::GetObstacle(int index) const {
     } else if (currentLevel == 9) {
         maxIndex = 8+ 8; 
     } else if (currentLevel == 10) {
-        maxIndex = 8 + 8;  // 8 boundary walls + 8 boss level obstacles
+        maxIndex = 8 + 9 + 1;  // 8 boundary walls + 9 boss obstacles (including bridge gap) + 1 extra
     } else {
         maxIndex = 8;   // Just boundary walls for other levels
     }
@@ -1026,7 +1036,7 @@ int Level::GetObstacleCount() const {
     } else if (currentLevel == 9) {
         return 8 + 8 +1; 
     } else if (currentLevel == 10) {
-        return 8 + 8 + 1;  // 8 boundary walls + 8 boss obstacles + 1 extra
+        return 8 + 9 + 1;  // 8 boundary walls + 9 boss obstacles (including bridge gap) + 1 extra
     } else {
         return 9;   // Just the 8 boundary walls + 1 extra for other levels
     }
@@ -1173,4 +1183,20 @@ bool Level::IsObstaclePenetrable(int index) const {
         return penetrableObstacles[index];
     }
     return false;
+}
+
+// Bridge gap management for level 10
+void Level::RemoveBridgeGapObstacle() {
+    if (currentLevel != 10) return;
+    
+    // The bridge gap obstacle is at index 9 (after 8 boundary walls + 1 left pillar)
+    // Make it have zero size to effectively remove it
+    obstacles[9] = {0, 0, 0, 0};
+}
+
+bool Level::HasBridgeGapObstacle() const {
+    if (currentLevel != 10) return false;
+    
+    // Check if the bridge gap obstacle (index 9) has non-zero size
+    return (obstacles[9].width > 0 && obstacles[9].height > 0);
 }
