@@ -376,7 +376,7 @@ void GameManager::UpdatePlaying(float deltaTime)
             return;
         }
 
-        if ((/*level.GetCurrentLevel() == 1 ||*/ level.GetCurrentLevel() == 2 || level.GetCurrentLevel() == 4 || level.GetCurrentLevel() == 6 || level.GetCurrentLevel() == 8) && !shopActivated && !shop.IsActive() && shop.IsShopAvailableForLevel(level.GetCurrentLevel()) && !shopCompletedThisLevel)
+        if ((level.GetCurrentLevel() == 2 || level.GetCurrentLevel() == 4 || level.GetCurrentLevel() == 6 || level.GetCurrentLevel() == 8))
         {
             shopActivated = true;
             shop.Activate(coinsCollected, &player);
