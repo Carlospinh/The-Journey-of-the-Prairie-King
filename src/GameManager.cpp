@@ -102,6 +102,7 @@ void GameManager::InitGame()
 void GameManager::ResetGame()
 {
     player.SetPosition({SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2});
+    player.SetPosition({ SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 });
     player.SetLives(3);
 
     timeRemaining = 60.0f;
@@ -166,7 +167,7 @@ void GameManager::CloseGame()
     Enemy::UnloadSharedTextures();
     Coin::UnloadSharedResources();
     PowerUp::UnloadSharedResources();
-    
+
     UnloadTexture(trophyTexture);
     UnloadTexture(bridgeTexture); // Unload bridge texture
     Beaver::UnloadSharedResources();
@@ -240,16 +241,16 @@ std::vector<Vector2> GameManager::GenerateBeaverPath() const
         if (GetRandomValue(0, 1) == 0)
         {
             // Left to right
-            Vector2 start = {bounds.x - 30, y};
-            Vector2 end = {bounds.x + bounds.width + 30, y};
+            Vector2 start = { bounds.x - 30, y };
+            Vector2 end = { bounds.x + bounds.width + 30, y };
             path.push_back(start);
             path.push_back(end);
         }
         else
         {
             // Right to left
-            Vector2 start = {bounds.x + bounds.width + 30, y};
-            Vector2 end = {bounds.x - 30, y};
+            Vector2 start = { bounds.x + bounds.width + 30, y };
+            Vector2 end = { bounds.x - 30, y };
             path.push_back(start);
             path.push_back(end);
         }
@@ -262,16 +263,16 @@ std::vector<Vector2> GameManager::GenerateBeaverPath() const
         if (GetRandomValue(0, 1) == 0)
         {
             // Top to bottom
-            Vector2 start = {x, bounds.y - 30};
-            Vector2 end = {x, bounds.y + bounds.height + 30};
+            Vector2 start = { x, bounds.y - 30 };
+            Vector2 end = { x, bounds.y + bounds.height + 30 };
             path.push_back(start);
             path.push_back(end);
         }
         else
         {
             // Bottom to top
-            Vector2 start = {x, bounds.y + bounds.height + 30};
-            Vector2 end = {x, bounds.y - 30};
+            Vector2 start = { x, bounds.y + bounds.height + 30 };
+            Vector2 end = { x, bounds.y - 30 };
             path.push_back(start);
             path.push_back(end);
         }
@@ -328,40 +329,37 @@ void GameManager::UpdatePlaying(float deltaTime)
     // Handle player exit animation after trophy pickup
     if (playerExiting) {
         playerExitTimer += deltaTime;
-        
-        // Move player towards exit target
+
         Vector2 currentPos = player.GetPosition();
         Vector2 direction = {
             playerExitTarget.x - currentPos.x,
             playerExitTarget.y - currentPos.y
         };
-        
-        // Normalize direction and apply speed
+
         float length = sqrt(direction.x * direction.x + direction.y * direction.y);
-        if (length > 5.0f) { // Still moving towards target
+        if (length > 5.0f) {
             direction.x /= length;
             direction.y /= length;
-            
-            float exitSpeed = 150.0f; // Player exit walking speed
+
+            float exitSpeed = 150.0f;
             Vector2 newPos = {
                 currentPos.x + direction.x * exitSpeed * deltaTime,
                 currentPos.y + direction.y * exitSpeed * deltaTime
             };
-            
+
             player.SetPosition(newPos);
-            player.UpdateAnimation(deltaTime, true); // Keep walking animation
-        } else {
-            // Player has reached exit point, transition to level completed
+            player.UpdateAnimation(deltaTime, true);
+        }
+        else {
             playerExiting = false;
             ui.SetGameState(LEVEL_COMPLETED);
             return;
         }
-        
-        // Don't process other game logic during exit animation
-        return;
+        return; // No m�s l�gica durante la animaci�n de salida
     }
 
     timeElapsed += deltaTime;
+
     if (timeRemaining > 0)
     {
         timeRemaining -= deltaTime;
@@ -370,27 +368,57 @@ void GameManager::UpdatePlaying(float deltaTime)
     {
         timeRemaining = 0;
 
+        // --- Activa la tienda solo en niveles 2,4,6,8 y s�lo si no est� activa ni activada antes ---
+        if ((level.GetCurrentLevel() == 2 || level.GetCurrentLevel() == 4 ||
+            level.GetCurrentLevel() == 6 || level.GetCurrentLevel() == 8) &&
+            !shop.IsActive() && !shopActivated)
+        {
+            shopActivated = true;
+            shop.Activate(coinsCollected, &player);
+        }
+        else if (!level.IsCompleted() && !shop.IsActive() && !shopActivated)
+        {
+            // Si no hay tienda en este nivel, marcar como completado directamente
+            level.SetCompleted();
+            shopCompletedThisLevel = true;
+        }
+
+        // Para nivel 10 ir directo a LEVEL_COMPLETED sin tienda
         if (level.GetCurrentLevel() == 10)
         {
             ui.SetGameState(LEVEL_COMPLETED);
             return;
         }
+    }
 
-        if ((level.GetCurrentLevel() == 2 || level.GetCurrentLevel() == 4 || level.GetCurrentLevel() == 6 || level.GetCurrentLevel() == 8))
+    // --- Actualiza la tienda si est� activa ---
+    if (shop.IsActive())
+    {
+        shop.Update(deltaTime);
+        shop.CheckItemPickup(player.GetCollisionRect());
+
+        if (!shop.IsActive() && shopActivated)
         {
-            shopActivated = true;
-            shop.Activate(coinsCollected, &player);
-        }
+            coinsCollected = shop.GetRemainingCoins();
+            shop.MarkShopCompletedForLevel(level.GetCurrentLevel());
+            shopCompletedThisLevel = true;
 
-        if (!level.IsCompleted())
-        {
-            level.SetCompleted();
+            if (!level.IsCompleted())
+            {
+                level.SetCompleted();
+            }
         }
+    }
 
+    // --- Solo si el nivel est� completado y no hay transici�n ni tienda activa,
+    //      verifica si el jugador est� en zona de salida para iniciar transici�n ---
+    if (level.IsCompleted() && !level.IsTransitioning() &&
+        !shop.IsActive() && shopCompletedThisLevel)
+    {
         Rectangle playerRect = player.GetCollisionRect();
         if (level.IsPlayerInExitZone(playerRect))
         {
-            // Clear enemies, death animations, powerups, and coins before transition
+            // Limpia elementos antes de la transici�n
             for (int i = 0; i < MAX_ENEMIES; i++)
                 enemies[i].SetActive(false);
             for (int i = 0; i < MAX_DEATH_ANIMATIONS; i++)
@@ -398,76 +426,25 @@ void GameManager::UpdatePlaying(float deltaTime)
             for (int i = 0; i < MAX_COINS; i++)
                 coins[i].SetActive(false);
             for (int i = 0; i < MAX_POWERUPS; i++)
-            {
-                PowerUpType type = powerUps[i].GetType();
                 powerUps[i].SetActive(false);
-                // Reset powerup flags
-                switch (type)
-                {
-                case POWERUP_WHEEL:
-                    wheelPowerUpOnField = false;
-                    break;
-                case POWERUP_SHOTGUN:
-                    shotgunPowerUpOnField = false;
-                    break;
-                case POWERUP_COFFEE:
-                    coffeePowerUpOnField = false;
-                    break;
-                case POWERUP_NUKE:
-                    nukePowerUpOnField = false;
-                    break;
-                case POWERUP_LIFE:
-                    lifePowerUpOnField = false;
-                    break;
-                }
-            }
 
-            // Use the new swipe transition instead of old transition
-            int currentLevel = level.GetCurrentLevel();
-            int nextLevel = currentLevel + 1;
-            if (nextLevel > 10)
-                nextLevel = 1;
-
-            // Set up player transition animation
             Vector2 currentPlayerPos = player.GetPosition();
             Rectangle nextLevelBounds = level.GetLevelBounds();
             Vector2 targetPlayerPos = {
-                nextLevelBounds.x + nextLevelBounds.width / 2,     // Center horizontally
-                nextLevelBounds.y + nextLevelBounds.height * 0.15f // Near top (15% from top)
+                nextLevelBounds.x + nextLevelBounds.width / 2,
+                nextLevelBounds.y + nextLevelBounds.height * 0.15f
             };
 
             level.SetPlayerTransition(currentPlayerPos, targetPlayerPos);
-            level.StartSwipeTransition(nextLevel);
+            level.StartSwipeTransition(level.GetCurrentLevel() + 1);
         }
     }
 
-    if (shop.IsActive())
-    {
-        shop.Update(deltaTime);
-
-        // Check for item pickup collision instead of E key interaction
-        if (shop.CheckItemPickup(player.GetCollisionRect()))
-        {
-            // Item was picked up, coins will be updated when shop deactivates
-        }
-
-        // Update player coins after shop interaction is complete
-        if (!shop.IsActive() && shopActivated)
-        {
-            coinsCollected = shop.GetRemainingCoins();
-            shop.MarkShopCompletedForLevel(level.GetCurrentLevel());
-            shopCompletedThisLevel = true;
-            shopActivated = false;
-        }
-
-        // Update shop purchase notifications even when shop is not active
-    }
-
+    // --- Actualiza la transici�n si est� activa ---
     if (level.IsTransitioning())
     {
         level.Update(deltaTime);
 
-        // Animate player during swipe transition
         if (level.ShouldAnimatePlayer())
         {
             Vector2 interpolatedPos = level.GetPlayerTransitionPosition();
@@ -486,7 +463,9 @@ void GameManager::UpdatePlaying(float deltaTime)
 
             level.LoadResources(nextLevel);
             timeRemaining = 60.0f;
+            shopActivated = false;
             shopCompletedThisLevel = false;
+
             for (int i = 0; i < MAX_ENEMIES; i++)
                 enemies[i].SetActive(false);
             for (int i = 0; i < MAX_BULLETS; i++)
@@ -496,12 +475,10 @@ void GameManager::UpdatePlaying(float deltaTime)
             for (int i = 0; i < MAX_POWERUPS; i++)
                 powerUps[i].SetActive(false);
 
-            // Position player near the top of the new level
             Rectangle bounds = level.GetLevelBounds();
             float playerX = bounds.x + bounds.width / 2;
             float playerY = bounds.y + bounds.height * 0.15f;
-            player.SetPosition({playerX, playerY});
-            return;
+            player.SetPosition({ playerX, playerY });
         }
     }
 
@@ -525,7 +502,7 @@ void GameManager::UpdatePlaying(float deltaTime)
 
             Vector2 spawnPos = {
                 bounds.x + paddingX + static_cast<float>(rand()) / (RAND_MAX / (bounds.width - 2 * paddingX)),
-                bounds.y + paddingY + static_cast<float>(rand()) / (RAND_MAX / (bounds.height - 2 * paddingY))};
+                bounds.y + paddingY + static_cast<float>(rand()) / (RAND_MAX / (bounds.height - 2 * paddingY)) };
 
             int powerUpType = rand() % 5; // Changed from 4 to 5 to include life power-ups
             SpawnSpecificPowerUp(spawnPos, static_cast<PowerUpType>(powerUpType));
@@ -614,7 +591,7 @@ void GameManager::UpdatePlaying(float deltaTime)
                             {
                                 Vector2 bossCenter = {
                                     enemies[i].GetPosition().x + (enemies[i].GetCollisionRect().width / 2),
-                                    enemies[i].GetPosition().y + (enemies[i].GetCollisionRect().height / 2)};
+                                    enemies[i].GetPosition().y + (enemies[i].GetCollisionRect().height / 2) };
                                 Vector2 direction = enemies[i].GetBossShootDirection(player.GetPosition());
                                 bullets[bulletIndex].Init(bossCenter, direction, BULLET_BOSS);
                                 break;
@@ -633,7 +610,7 @@ void GameManager::UpdatePlaying(float deltaTime)
                             {
                                 Vector2 bossCenter = {
                                     enemies[i].GetPosition().x + (enemies[i].GetCollisionRect().width / 2),
-                                    enemies[i].GetPosition().y + (enemies[i].GetCollisionRect().height / 2)};
+                                    enemies[i].GetPosition().y + (enemies[i].GetCollisionRect().height / 2) };
                                 Vector2 direction = enemies[i].GetBossShootDirection(player.GetPosition());
                                 bullets[bulletIndex].Init(bossCenter, direction, BULLET_BOSS_RAIN);
                                 break;
@@ -667,12 +644,13 @@ void GameManager::UpdatePlaying(float deltaTime)
                         // Trophy picked up - start boss defeat sequence first
                         coins[i].SetActive(false);
                         trophyOnField = false;
-                        
+
                         // Start boss defeat sequence instead of immediately starting player exit
                         HandleBossDefeat(player.GetPosition());
-                        
+
                         return;
-                    } else {
+                    }
+                    else {
                         // Regular coin
                         coins[i].SetActive(false);
                         coinsCollected++;
@@ -881,25 +859,25 @@ void GameManager::SpawnEnemy()
                 break;
             }
         }
-        
+
         // Only spawn boss if no boss has been created yet
         if (!bossExists) {
             // Spawn boss at 13th row, 8th column of 16x16 grid
             Rectangle bounds = level.GetLevelBounds();
             float tileWidth = bounds.width / 16.0f;
             float tileHeight = bounds.height / 16.0f;
-            
+
             Vector2 bossSpawnPos = {
                 bounds.x + 8 * tileWidth,  // 8th column (0-indexed as 7)
                 bounds.y + 13 * tileHeight // 13th row (0-indexed as 12)
             };
-            
+
             for (int i = 0; i < MAX_ENEMIES; i++) {
                 if (!enemies[i].IsActive()) {
                     float baseSpeed = 100.0f;
                     float speedBonus = currentLevel * 5.0f;
                     float finalSpeed = baseSpeed + speedBonus;
-                    
+
                     // Boss scale decreased by 30% (0.2f * 0.7 = 0.14f)
                     enemies[i].Init(bossSpawnPos, 0.14f, finalSpeed, ENEMY_BOSS);
                     break;
@@ -920,7 +898,7 @@ void GameManager::SpawnEnemy()
         {bgX + 15, bgY + bgHeight * 0.4f + (float)(rand() % (int)(bgHeight * 0.2f))},
         {bgX + bgWidth - 15, bgY + bgHeight * 0.4f + (float)(rand() % (int)(bgHeight * 0.2f))},
         {bgX + bgWidth * 0.4f + (float)(rand() % (int)(bgWidth * 0.2f)), bgY + 15},
-        {bgX + bgWidth * 0.4f + (float)(rand() % (int)(bgWidth * 0.2f)), bgY + bgHeight - 15}};
+        {bgX + bgWidth * 0.4f + (float)(rand() % (int)(bgWidth * 0.2f)), bgY + bgHeight - 15} };
 
     for (int i = 0; i < MAX_ENEMIES; i++)
     {
@@ -1169,14 +1147,14 @@ void GameManager::HandleBulletCollisions()
                             enemiesKilled++;
 
                             CreateDeathAnimation(enemies[j].GetPosition());
-                            
+
                             // Check if boss was defeated
-                            if(enemies[j].GetType() == ENEMY_BOSS && !trophyOnField) {
+                            if (enemies[j].GetType() == ENEMY_BOSS && !trophyOnField) {
                                 // Store boss death position and spawn trophy there
                                 bossDeathPosition = enemies[j].GetPosition();
                                 SpawnTrophy(bossDeathPosition);
                             }
-                            else{
+                            else {
                                 // Normal enemy death drops
                                 int dropChance = rand() % 100;
 
@@ -1432,23 +1410,23 @@ void GameManager::HandleBossDefeat(Vector2 bossPosition) {
     playingLightning = false;
     showBridge = false;
     trophySpawned = false;
-    
+
     // Set up bridge position (center of level)
     Rectangle bounds = level.GetLevelBounds();
     bridgePosition = {
         bounds.x + bounds.width / 2 - (bridgeTexture.width * 0.2f) / 2,
         bounds.y + bounds.height / 2 - (bridgeTexture.height * 0.2f) / 2
     };
-    
+
     // Set completed level background
     level.SetCompleted();
 }
 
 void GameManager::UpdateBossDefeatSequence(float deltaTime) {
     if (!bossDefeated) return;
-    
+
     bossDefeatTimer += deltaTime;
-    
+
     // Phase 1: White screen (0-2 seconds)
     if (bossDefeatTimer < whiteScreenDuration) {
         showWhiteScreen = true;
@@ -1462,7 +1440,7 @@ void GameManager::UpdateBossDefeatSequence(float deltaTime) {
         showCrackEffect = true;
         playingLightning = false;
         showBridge = false;
-        
+
         crackEffectTimer += deltaTime;
     }
     // Phase 3: Lightning animation (3-4.5 seconds)
@@ -1471,13 +1449,13 @@ void GameManager::UpdateBossDefeatSequence(float deltaTime) {
         showCrackEffect = false;
         playingLightning = true;
         showBridge = false;
-        
+
         lightningTimer += deltaTime;
         if (lightningTimer >= 0.1f) // Change frame every 0.1 seconds
-            {
-                lightningFrame = (lightningFrame + 1) % maxLightningFrames;
-                lightningTimer = 0.0f;
-            }
+        {
+            lightningFrame = (lightningFrame + 1) % maxLightningFrames;
+            lightningTimer = 0.0f;
+        }
     }
     // Phase 4: Bridge appears and trophy spawns (4.5-6 seconds)
     else if (bossDefeatTimer < whiteScreenDuration + 4.0f) {
@@ -1485,7 +1463,7 @@ void GameManager::UpdateBossDefeatSequence(float deltaTime) {
         showCrackEffect = false;
         playingLightning = false;
         showBridge = true;
-        
+
         if (!trophySpawned) {
             // Spawn trophy at boss death position
             Vector2 trophyPos = bossDeathPosition;
@@ -1499,16 +1477,16 @@ void GameManager::UpdateBossDefeatSequence(float deltaTime) {
         showCrackEffect = false;
         playingLightning = false;
         showBridge = true; // Keep bridge visible during player exit
-        
+
         // Start player exit animation if not already started
         if (!playerExiting) {
             Rectangle bounds = level.GetLevelBounds();
             playerExiting = true;
             playerExitTimer = 0.0f;
             // Set exit target to the right edge of the screen
-            playerExitTarget = {bounds.x + bounds.width + 100, player.GetPosition().y};
+            playerExitTarget = { bounds.x + bounds.width + 100, player.GetPosition().y };
         }
-        
+
         // Boss defeat sequence is now complete, but player exit continues in UpdatePlaying
         bossDefeated = false;
     }
@@ -1516,43 +1494,43 @@ void GameManager::UpdateBossDefeatSequence(float deltaTime) {
 
 void GameManager::DrawBossDefeatSequence() {
     if (!bossDefeated && !showBridge) return;
-    
+
     // Draw white screen
     if (showWhiteScreen) {
         DrawRectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, WHITE);
     }
-    
+
     // Draw crack effect
     if (showCrackEffect) {
         // Draw multiple crack lines across the screen
         for (int i = 0; i < 10; i++) {
-            Vector2 start = {(float)(rand() % SCREEN_WIDTH), 0};
-            Vector2 end = {(float)(rand() % SCREEN_WIDTH), SCREEN_HEIGHT};
+            Vector2 start = { (float)(rand() % SCREEN_WIDTH), 0 };
+            Vector2 end = { (float)(rand() % SCREEN_WIDTH), SCREEN_HEIGHT };
             DrawLineEx(start, end, 3.0f, BLACK);
         }
-        
+
         // Draw some horizontal cracks too
         for (int i = 0; i < 5; i++) {
-            Vector2 start = {0, (float)(rand() % SCREEN_HEIGHT)};
-            Vector2 end = {SCREEN_WIDTH, (float)(rand() % SCREEN_HEIGHT)};
+            Vector2 start = { 0, (float)(rand() % SCREEN_HEIGHT) };
+            Vector2 end = { SCREEN_WIDTH, (float)(rand() % SCREEN_HEIGHT) };
             DrawLineEx(start, end, 2.0f, BLACK);
         }
     }
-    
+
     // Draw lightning animation
     if (playingLightning) {
         // Create lightning effect with random lines
         Color lightningColor = WHITE;
         for (int i = 0; i < 15; i++) {
-            Vector2 start = {SCREEN_WIDTH / 2.0f + (rand() % 200 - 100), 0};
-            Vector2 end = {SCREEN_WIDTH / 2.0f + (rand() % 200 - 100), SCREEN_HEIGHT};
+            Vector2 start = { SCREEN_WIDTH / 2.0f + (rand() % 200 - 100), 0 };
+            Vector2 end = { SCREEN_WIDTH / 2.0f + (rand() % 200 - 100), SCREEN_HEIGHT };
             DrawLineEx(start, end, 8.0f, lightningColor);
         }
-        
+
         // Add some glow effect
         DrawRectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, Fade(YELLOW, 0.3f));
     }
-    
+
     // Draw bridge when visible (during phase 4 and player exit)
     // if (showBridge) {
     //     DrawTextureEx(bridgeTexture, bridgePosition, 0.0f, 0.2f, WHITE);
